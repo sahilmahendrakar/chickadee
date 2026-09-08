@@ -101,6 +101,10 @@ a{color:inherit}
   transition:color .2s, transform .2s;
 }
 .birdsong svg{display:block; transform:rotate(-8deg)}
+/* the source link: a small mark in the margin, pencil grey until hovered */
+.gh{display:inline-flex; align-items:center; color:var(--meta); padding:6px; margin:-6px 0; transition:color .2s, transform .2s}
+.gh svg{display:block}
+.gh:hover{color:var(--ink); transform:scale(1.1)}
 .birdsong:hover{color:var(--link); transform:scale(1.1)}
 .birdsong--waiting{color:var(--meta)}
 .birdsong--off{color:var(--meta); opacity:.75}

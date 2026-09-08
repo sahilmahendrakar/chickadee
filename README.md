@@ -1,64 +1,114 @@
 <p align="center">
-  <img src="extension/ext/icons/icon128.png" width="76" alt="Chickadee">
+  <img src="web/public/birds/head-right.webp" width="120" alt="">
 </p>
 <h1 align="center">Chickadee</h1>
-<p align="center"><em>Reads any web page aloud, entirely on your machine.</em></p>
+<p align="center"><em>Any page, read aloud, locally.</em></p>
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/chickadee/nbghebngnkkjcgpcmhchpijmcdkclndm">Add to Chrome</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.usechickadee.com">usechickadee.com</a>
+</p>
 
 ---
 
-Chickadee is a browser extension that reads web pages aloud in a natural voice and highlights
-each sentence **on the real page** as it reads.
+Chickadee is a browser extension that reads web pages aloud in a natural, human-sounding
+voice. The speech model runs on your own computer, inside the browser, so there is no
+server, no account, no API key, and nothing to pay for. Nothing you read is ever uploaded.
 
-The speech model runs on your own computer. There is no server, no account, no API
-key, and nothing to pay for. Nothing you read is ever uploaded.
+## What it does
 
-## How it works
+- **Reads any article aloud** in one of twelve voices, at a speed you choose.
+- **Highlights each sentence on the real page** as it's spoken, not in a separate reader view.
+- **Starts wherever you like.** Right-click any word and choose "Read aloud from here".
+- **Works offline.** The voice downloads once (about 310 MB) and then never touches the network again.
+- **Keeps your reading private.** The page never leaves your machine, because there's nowhere for it to go.
+
+## How to use it
+
+1. Open an article and press **⌥R** (Alt+R), or click the Chickadee button in the toolbar.
+2. **⌥P** (Alt+P) pauses and resumes. The small bar at the bottom of the page also has previous, next, speed, and stop.
+3. Right-click a sentence and pick **Read aloud from here** to start partway through.
+4. Click the toolbar button to change the voice or the default speed. Your choice is remembered.
+
+The first time you read something, Chickadee downloads the voice model once. After that it
+starts in a couple of seconds.
+
+## What you need
+
+- A **Chrome-based browser** (Chrome, Edge, Arc, Brave, and friends) version 113 or newer.
+- A computer whose browser can use the graphics card through **WebGPU**. Any Apple Silicon Mac
+  or a laptop with recent integrated graphics is comfortably enough. Chickadee checks on first
+  run and tells you plainly if your machine can't do it.
+
+## Why it's different
+
+Most read-aloud tools either use the operating system's robotic built-in voice, or send your
+text to a server where a large model produces good audio and sends it back. Chickadee gets the
+good audio without the server: it runs [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M),
+a small open speech model, directly in the browser on your GPU.
+
+A few things fall out of that:
+
+- The privacy story is an architecture, not a policy. There is no server in the system.
+- It works on a plane, in a tunnel, or in the wilderness.
+- It's free forever. The only cost is a one-time download.
+- It asks for almost nothing. The extension has no standing access to any website; it is
+  loaded into a page only when you ask it to read one (the `activeTab` permission).
+
+## Under the hood
+
+Three small pieces, and the model:
 
 | Piece | Role |
 |---|---|
-| `extension/ext/content.js` | Walks the live DOM, builds a `Range` per sentence, paints the current one with the **CSS Custom Highlight API** (no DOM mutation), draws the control bar |
-| `extension/ext/engine.html` | Hidden iframe holding the model and the `<audio>` element |
-| `extension/ext/background.js` | Routes the keyboard shortcuts and the right-click menu |
+| `extension/ext/content.js` | Splits the live page into sentences, highlights the current one with the CSS Custom Highlight API (no DOM changes), draws the control bar |
+| `extension/ext/engine.html` | A hidden frame that holds the model and the `<audio>` element |
+| `extension/ext/background.js` | Routes the toolbar button, keyboard shortcuts, and right-click menu to the page you're on |
 
-The pipeline: **text → phonemes (espeak-ng in WASM) → tokens → Kokoro-82M (ONNX) → 24 kHz waveform.**
+For each sentence: **text → phonemes** (espeak-ng compiled to WebAssembly) **→ tokens →
+Kokoro-82M** (ONNX Runtime on WebGPU) **→ 24 kHz audio**. A "voice" is a table of 510 style
+vectors indexed by sentence length, so delivery adapts to how long a sentence is. The next two
+sentences generate while the current one plays, so playback never waits.
 
-A "voice" is a table of 510 style vectors indexed by utterance length, so prosody adapts
-to sentence length. Sentences N+1 and N+2 generate while N plays, so playback never waits.
+Kokoro runs in full precision on the GPU only. The 8-bit build produces corrupt audio on WebGPU
+and every CPU-only configuration generates slower than it plays, so the extension requires
+WebGPU rather than falling back to something worse.
 
-## Requirements
-
-- **WebGPU.** There is no usable fallback — measured, q8-on-WebGPU is numerically corrupt
-  and every WASM configuration generates slower than it plays. The extension checks for
-  WebGPU before downloading anything and says so plainly if your machine can't run it.
-- A one-time ~310 MB voice model download. Cached afterwards; works offline.
-
-## Build
+## Developing
 
 ```bash
 cd extension
 npm install
-node build.mjs        # bundles the engine + stages the ONNX runtime into ext/vendor
+node build.mjs        # bundles the engine and stages the ONNX runtime into ext/vendor
 ./package.sh          # produces chickadee-<version>.zip for the Chrome Web Store
 ```
 
 Then load `extension/ext` unpacked at `chrome://extensions` with Developer mode on.
 
-> **Dev note:** `chrome.developerPrivate.reload` refreshes code but does **not** re-read
-> `manifest.json`. After a manifest change you must fully remove and re-load the extension,
-> or `web_accessible_resources` changes silently do nothing.
+> After changing `manifest.json`, remove the extension and load it unpacked again; the reload
+> button doesn't re-read the manifest.
 
-## Website
+More detail, including things that were tried and reverted, lives in
+[`extension/README.md`](extension/README.md).
 
-`web/` is a Next.js site. The landing page narrates its own copy using audio generated by
-this same model, under a soft bed of public-domain chickadee recordings that ducks while
-the voice speaks. Deploys to Vercel as-is.
+## The website
+
+`web/` is a Next.js site. The landing page narrates its own copy with audio generated by the
+same model, under a soft bed of public-domain chickadee recordings that ducks while the voice
+speaks. It deploys to Vercel as-is.
+
+## Privacy
+
+Chickadee collects nothing and sends nothing. The full policy is in [PRIVACY.md](PRIVACY.md)
+and at [usechickadee.com/privacy](https://www.usechickadee.com/privacy).
 
 ## Built on
 
 [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) (Apache-2.0) ·
 [kokoro-js](https://github.com/hexgrad/kokoro) (Apache-2.0) ·
 [Transformers.js](https://github.com/huggingface/transformers.js) (Apache-2.0) ·
-[ONNX Runtime Web](https://github.com/microsoft/onnxruntime) (MIT)
+[ONNX Runtime Web](https://github.com/microsoft/onnxruntime) (MIT) ·
+[espeak-ng](https://github.com/espeak-ng/espeak-ng) (GPL-3.0, via the `phonemizer` package)
 
 ## License
 
