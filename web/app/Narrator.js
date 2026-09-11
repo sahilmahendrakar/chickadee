@@ -45,6 +45,10 @@ export default function Narrator({ sentences, total }) {
   const [playing, setPlaying] = useState(false);
   const [idx, setIdx] = useState(-1);
   const [elapsed, setElapsed] = useState(0);
+  // the mini player: the same black pill the extension floats over a page.
+  // It appears on the first Listen and stays until its ✕ is pressed.
+  const [mini, setMini] = useState(false);
+  const [speed, setSpeed] = useState(1);
 
   /* ---- the birdsong bed ---- */
   const ac = useRef(null);          // AudioContext, created on mount, running after a gesture
@@ -247,7 +251,9 @@ export default function Narrator({ sentences, total }) {
     if (!a) return;
     if (a.paused) {
       idxRef.current = -1;
+      a.playbackRate = speed;
       await a.play();
+      setMini(true);
       playingRef.current = true; setPlaying(true);
       startSinging();
       bedTarget.current = DUCK_LEVEL; settleBed(1.2);   // the birds hush for the voice
@@ -263,6 +269,24 @@ export default function Narrator({ sentences, total }) {
     const a = audioRef.current; if (!a) return;
     a.currentTime = sentences[i].start + 0.01;
     if (a.paused) toggle();
+  };
+  // the mini player's ‹ and ›: one sentence back or forward from the live one
+  const step = (d) => {
+    const a = audioRef.current; if (!a) return;
+    const cur = idxRef.current >= 0 ? idxRef.current
+              : sentences.findIndex((s) => a.currentTime < s.end);
+    seek(Math.max(0, Math.min(sentences.length - 1, (cur < 0 ? 0 : cur) + d)));
+  };
+  const changeSpeed = (v) => {
+    setSpeed(v);
+    if (audioRef.current) audioRef.current.playbackRate = v;
+  };
+  // the mini player's ✕: stop, rewind, and put the bar away
+  const stop = () => {
+    const a = audioRef.current;
+    if (a) { a.pause(); a.currentTime = 0; }
+    ended();
+    setMini(false);
   };
 
   const ended = () => {
@@ -415,6 +439,20 @@ export default function Narrator({ sentences, total }) {
         </div>
         <img className="flyaway" src="/birds/8-flyaway.webp" alt="" aria-hidden="true" />
       </section>
+
+      {/* the extension's mini player, floated over this page the way it floats
+          over any page: previous, play/pause, next, speed, stop */}
+      {mini ? (
+        <div className="mini" role="group" aria-label="Narration player">
+          <button type="button" className="mini__btn" onClick={() => step(-1)} title="Previous sentence" aria-label="Previous sentence">‹</button>
+          <button type="button" className="mini__btn" onClick={toggle} title="Play / pause" aria-label={playing ? 'Pause' : 'Play'}>{playing ? '❚❚' : '▶'}</button>
+          <button type="button" className="mini__btn" onClick={() => step(1)} title="Next sentence" aria-label="Next sentence">›</button>
+          <select className="mini__speed" value={speed} onChange={(e) => changeSpeed(parseFloat(e.target.value))} aria-label="Speed">
+            {[0.9, 1, 1.25, 1.5, 1.75, 2].map((v) => <option key={v} value={v}>{v}x</option>)}
+          </select>
+          <button type="button" className="mini__btn" onClick={stop} title="Stop" aria-label="Stop">✕</button>
+        </div>
+      ) : null}
     </>
   );
 }

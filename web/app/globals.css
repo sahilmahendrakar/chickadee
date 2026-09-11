@@ -250,6 +250,26 @@ h1{
   transform:rotate(6deg) scale(1.6); pointer-events:none;
 }
 
+/* ---------- the mini player ---------- */
+/* A copy of the bar the extension floats over a page: the same black pill,
+   the same glyphs, fixed to the bottom of the screen. */
+.mini{
+  position:fixed; bottom:calc(22px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%);
+  z-index:50; display:flex; align-items:center; gap:2px; padding:7px 10px;
+  border-radius:999px; background:#1c1c1e; color:#fff; box-shadow:0 6px 22px rgba(0,0,0,.35);
+  font:13px -apple-system, system-ui, sans-serif;
+  animation:mini-in .35s var(--ease) both;
+}
+@keyframes mini-in{from{opacity:0; transform:translate(-50%, 10px)} to{opacity:1; transform:translateX(-50%)}}
+.mini__btn{
+  all:unset; cursor:pointer; padding:5px 9px; border-radius:999px; color:#fff; line-height:1; font-size:14px;
+  transition:background .15s;
+}
+.mini__btn:hover{background:rgba(255,255,255,.16)}
+.mini__btn:focus-visible, .mini__speed:focus-visible{outline:2px solid #fff; outline-offset:-2px}
+.mini__speed{all:unset; cursor:pointer; color:#fff; font-size:12px; padding:0 4px}
+.mini__speed option{color:#000}
+
 /* ---------- footer ---------- */
 footer{
   margin-top:110px; padding-bottom:48px; display:flex; gap:24px; align-items:center; flex-wrap:wrap;
@@ -327,7 +347,7 @@ footer a:hover{color:var(--link)}
   .sheet{padding-top:40px}
 }
 @media (prefers-reduced-motion:reduce){
-  .wash{animation:none}
+  .wash, .mini{animation:none}
   *{transition-duration:.01ms !important}
 }
 
