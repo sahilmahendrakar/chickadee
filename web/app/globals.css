@@ -176,10 +176,10 @@ h1{
 .passage{margin-top:110px}
 .passage .label{
   font-family:var(--font-hand), 'Homemade Apple', cursive; font-size:16px; color:var(--note);
-  display:flex; align-items:center; gap:12px;
+  display:flex; align-items:flex-start; gap:12px;
 }
 .passage .dot{
-  flex:none; width:8px; height:8px; border-radius:50%;
+  flex:none; width:8px; height:8px; border-radius:50%; margin-top:.85em;   /* centred on the first line */
   border:1.5px solid var(--note); background:transparent; transition:background .3s;
 }
 .passage .label.live .dot{background:var(--live)}
@@ -238,7 +238,7 @@ h1{
   font-family:var(--font-display), 'Spectral', Georgia, serif; font-weight:300;
   font-size:58px; line-height:1.02; letter-spacing:-.02em; margin:0 0 14px;
 }
-.install h2 em{font-style:italic}
+.install h2 em{font-style:italic; white-space:nowrap}
 .install .req{margin:0 0 28px; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--meta)}
 .install .reqs{margin:22px 0 0; font-size:13.5px; line-height:1.8; color:var(--body); max-width:54ch}
 .install .flyaway{
@@ -278,15 +278,16 @@ footer a:hover{color:var(--link)}
   -webkit-box-decoration-break:clone; box-decoration-break:clone; padding:.06em .22em; margin:0 -.22em;
 }
 .prose code{font-family:inherit; color:var(--ink); border-bottom:1px solid var(--dim)}
-.prose a{color:var(--link)}
+.prose a{color:var(--link); overflow-wrap:anywhere}
 
 /* ---------- responsive ---------- */
 @media (max-width:1000px){
   .hero{grid-template-columns:minmax(0,1fr); padding-top:40px}
-  /* the frames carry empty space above the bird, so pull the box up and let the
-     twig's bottom sit just clear of the headline */
-  .bird{order:-1; width:100%; max-width:420px; margin:-60px auto 0; transform:rotate(-2deg) scale(1.1)}
-  .bird figcaption{left:2%; bottom:auto; top:20%; font-size:14px}
+  /* the frames carry empty space above the bird, so pull the box up until the
+     bird sits just under the masthead, and let the twig's bottom sit clear of
+     the headline; the caption is pencilled below the twig, bottom-left */
+  .bird{order:-1; width:100%; max-width:420px; margin:-120px auto 0; transform:rotate(-2deg) scale(1.1)}
+  .bird figcaption{left:2%; bottom:4%; font-size:13px}
   h1{font-size:clamp(2.6rem, 9vw, 84px); white-space:normal}
   .showcase, .proof, .install{grid-template-columns:minmax(0,1fr)}
   .showcase{gap:36px} .proof{gap:40px}
@@ -302,8 +303,22 @@ footer a:hover{color:var(--link)}
   .prose h1{font-size:clamp(2.2rem, 7.4vw, 58px)}
   .wash--tan{right:-360px}
 }
+@media (max-width:640px){
+  /* the credit no longer fits beside the links — it takes its own line */
+  footer{gap:10px 18px; margin-top:70px}
+  footer .credit{flex-basis:100%; text-align:left; margin-left:0}
+  /* the flyaway frame is mostly empty paper around a small bird: close the gaps */
+  .install .flyaway{max-width:260px; margin:-20px auto -80px}
+}
 @media (max-width:560px){
-  .mast__right{flex-basis:100%; margin-left:0}
+  /* the masthead becomes three lines: the wordmark with the two marks on its
+     right, then the pencilled note, then the meta line */
+  .mast__right{display:contents}
+  .mast .note, .mast .meta{order:1; flex-basis:100%}
+  .mast .note{margin-top:-4px}
+  .mast .meta{font-size:11.5px; letter-spacing:.12em; line-height:1.7; margin-top:-8px}
+  .mast .birdsong, .mast .gh:first-child{margin-left:auto}
+  .birdsong, .gh{align-self:center}
   .mast__logo{width:40px; height:40px}
   .sheet{padding-top:40px}
 }
@@ -385,8 +400,6 @@ footer a:hover{color:var(--link)}
   .guide-copy h2{font-size:32px; margin-bottom:18px}
   .guide-copy p{font-size:14px}
   .guide-end .fig{font-size:13px}
-  .field-guide footer{gap:18px}
-  .field-guide footer .credit{flex-basis:100%; text-align:left; margin-left:0}
 }
 
 .guide-brand{display:inline-flex; align-items:baseline; gap:18px; text-decoration:none}
