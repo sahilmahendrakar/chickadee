@@ -137,7 +137,9 @@ h1{
 .cta{border-radius:52% 48% 50% 50% / 45% 55% 45% 55%; padding:15px 30px}
 
 /* the bird: a flipbook of eight watercolour frames */
-.bird{margin:-220px -110px -80px -20px; position:relative; transform:rotate(-2deg); pointer-events:none}
+/* the bird stacks above the masthead so the fly-in passes over the meta line
+   (pointer-events stay off, so the switches under it still take clicks) */
+.bird{margin:-220px -110px -80px -20px; position:relative; z-index:4; transform:rotate(-2deg); pointer-events:none}
 .bird__box{aspect-ratio:4/5; position:relative}
 .bird__frame{
   position:absolute; inset:0; pointer-events:none;
@@ -145,6 +147,8 @@ h1{
   mix-blend-mode:multiply; opacity:0;           /* no transition: cuts, like a flipbook */
 }
 .bird__frame.on{opacity:1}
+/* in the air the bird is painted on, not multiplied in, so it covers the header text */
+.bird__frame--1, .bird__frame--2{mix-blend-mode:normal}
 .bird__frame--8{transform:translate(-28%,-32%) scale(.85)}
 .bird figcaption{
   position:absolute; left:14%; bottom:12%; font-family:var(--font-hand), 'Homemade Apple', cursive;
@@ -287,7 +291,7 @@ footer a:hover{color:var(--link)}
      bird sits just under the masthead, and let the twig's bottom sit clear of
      the headline; the caption is pencilled below the twig, bottom-left */
   .bird{order:-1; width:100%; max-width:420px; margin:-120px auto 0; transform:rotate(-2deg) scale(1.1)}
-  .bird figcaption{left:2%; bottom:4%; font-size:13px}
+  .bird figcaption{left:2%; bottom:15%; font-size:14px}
   h1{font-size:clamp(2.6rem, 9vw, 84px); white-space:normal}
   .showcase, .proof, .install{grid-template-columns:minmax(0,1fr)}
   .showcase{gap:36px} .proof{gap:40px}
@@ -311,12 +315,12 @@ footer a:hover{color:var(--link)}
   .install .flyaway{max-width:260px; margin:-20px auto -80px}
 }
 @media (max-width:560px){
-  /* the masthead becomes three lines: the wordmark with the two marks on its
-     right, then the pencilled note, then the meta line */
+  /* the masthead becomes two lines: the wordmark with the two marks on its
+     right, then the meta line. The pencilled note is left off — the hero says
+     the same thing a few lines down, and two subtitles stacked read as clutter */
   .mast__right{display:contents}
-  .mast .note, .mast .meta{order:1; flex-basis:100%}
-  .mast .note{margin-top:-4px}
-  .mast .meta{font-size:11.5px; letter-spacing:.12em; line-height:1.7; margin-top:-8px}
+  .mast .note{display:none}
+  .mast .meta{order:1; flex-basis:100%; font-size:11.5px; letter-spacing:.12em; line-height:1.7; margin-top:-6px}
   .mast .birdsong, .mast .gh:first-child{margin-left:auto}
   .birdsong, .gh{align-self:center}
   .mast__logo{width:40px; height:40px}

@@ -357,22 +357,24 @@ export default function Narrator({ sentences, total }) {
 
         <figure className="bird">
           <div className="bird__box" role="img"
-               aria-label={playing ? 'A watercolour chickadee on a twig, singing' : 'A watercolour chickadee on a twig, listening'}>
+               aria-label={playing ? 'A watercolour chickadee on a twig, singing' : 'A watercolour chickadee on a twig'}>
             {FRAMES.map((f, n) => (
               <div key={f} aria-hidden="true"
                    className={`bird__frame bird__frame--${n + 1}${bird === n + 1 ? ' on' : ''}`}
                    style={{ backgroundImage: `url(/birds/${f}.webp)` }} />
             ))}
           </div>
-          <figcaption>{playing ? 'fig. 1 — chickadee, singing' : 'fig. 1 — chickadee, listening'}</figcaption>
+          <figcaption>{playing ? 'fig. 1 — chickadee, singing' : 'fig. 1 — chickadee'}</figcaption>
         </figure>
       </section>
 
       <section className={`passage${rd}`} ref={secRef('passage')}>
-        <div className={`label${playing ? ' live' : ''}`}>
-          <span className="dot" />
-          {playing ? 'now speaking — Kokoro-82M, voice af_heart' : 'press listen. the page will read itself.'}
-        </div>
+        {playing ? (
+          <div className="label live">
+            <span className="dot" />
+            now speaking — Kokoro-82M, voice af_heart
+          </div>
+        ) : null}
         <p className="script">{spans('body')}</p>
         <audio ref={audioRef} src="/audio/narration.mp3" preload="auto" onEnded={ended} />
       </section>
