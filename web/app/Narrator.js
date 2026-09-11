@@ -346,6 +346,9 @@ export default function Narrator({ sentences, total }) {
           <p className="standfirst">{spans('sub')}</p>
           <div className="controls">
             <button className="btn listen" onClick={toggle}>{playing ? 'Pause' : 'Listen'}</button>
+            <a className="how-link" href="/how-it-works">
+              <span>How it works</span>
+            </a>
             <span className="elapsed">
               {mmss(elapsed)} / {mmss(total)} — {playing ? 'speaking' : 'the page reads itself'}
             </span>

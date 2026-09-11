@@ -311,3 +311,82 @@ footer a:hover{color:var(--link)}
   .wash{animation:none}
   *{transition-duration:.01ms !important}
 }
+
+/* ---------- field guide ---------- */
+.how-link{display:inline-flex; align-items:center; gap:12px; min-height:48px; padding:8px 2px;
+  font-family:var(--font-hand), 'Homemade Apple', cursive; font-size:14px; color:var(--note);
+  text-decoration:none; white-space:nowrap; transform:rotate(-1deg)}
+.how-link>span{position:relative}
+.how-link>span::after{content:''; position:absolute; left:0; right:0; bottom:1px; height:1px;
+  background:currentColor; opacity:.35; transform:rotate(-1deg); transition:opacity .2s}
+.how-link:hover>span::after{opacity:.8}
+.hero .controls{column-gap:30px; row-gap:14px}
+.hero .controls .elapsed{flex-basis:100%; font-size:13px}
+.guide-text-link:hover,.how-link:hover{color:var(--ink)}
+.guide-hero{position:relative; padding:90px 0 64px; border-bottom:1px solid rgba(107,98,80,.25)}
+.guide-eyebrow{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--note); margin-bottom:30px}
+.guide-eyebrow span{padding:0 10px}
+.guide-hero h1{font-size:clamp(52px,6.8vw,82px); line-height:1.1; white-space:normal; position:relative; z-index:1}
+.guide-hero h1 em{font-weight:200; background:url(/textures/wash-blue.png) center / 100% 85% no-repeat; padding-right:.15em}
+.guide-deck{font-size:15px; line-height:1.9; color:var(--body); margin:30px 0 0; max-width:55ch}
+.guide-bird{position:absolute; right:-34px; top:12px; width:360px; margin:0; transform:rotate(-5deg); z-index:-1}
+.guide-bird img{display:block; width:100%; height:auto; mix-blend-mode:multiply}
+.guide-bird figcaption{font-family:var(--font-hand),cursive; font-size:13px; text-align:center; color:var(--note); margin-top:-32px}
+.guide-intro,.guide-section{display:grid; grid-template-columns:190px minmax(0,1fr); column-gap:48px}
+.guide-intro{padding:52px 0 42px; align-items:baseline}
+.guide-margin{font-family:var(--font-hand),cursive; font-size:13px; color:var(--note); line-height:2}
+.guide-margin>span{display:block; font-family:var(--font-mono),monospace; font-size:11px; letter-spacing:.15em; margin-bottom:10px; color:var(--meta)}
+.guide-intro p{font-family:var(--font-display),Georgia,serif; font-weight:300; font-size:29px; line-height:1.5; margin:0; max-width:38ch}
+.guide-diagram{background:rgba(251,248,241,.55); border:1px solid rgba(107,98,80,.25); border-radius:3px 12px 4px 8px; padding:24px 32px 20px; margin:0 0 20px 238px; transform:rotate(-.6deg)}
+.guide-diagram__label{text-align:center; font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--note)}
+.guide-diagram ol{display:grid; grid-template-columns:repeat(3,1fr); list-style:none; padding:0; margin:24px 0 28px; gap:24px}
+.guide-diagram li{position:relative; text-align:center; display:flex; flex-direction:column; align-items:center; gap:9px}
+.guide-diagram li+li::before{content:'→'; position:absolute; left:-20px; top:19px; color:var(--meta); font-size:24px; font-family:Georgia,serif}
+.guide-step-icon{display:grid; place-items:center; height:52px; width:70px; font:300 34px var(--font-display),Georgia,serif; color:var(--note)}
+.guide-wave{letter-spacing:-7px; padding-right:7px}
+.guide-diagram strong{font-size:12px; font-weight:400}
+.guide-diagram li>span:last-child{font-size:10px; line-height:1.6; color:var(--note); max-width:16ch}
+.guide-diagram figcaption{font-family:var(--font-hand),cursive; color:var(--note); font-size:11px; text-align:center; line-height:1.9}
+.guide-section{padding:48px 0; border-bottom:1px solid rgba(107,98,80,.2)}
+.guide-copy{max-width:66ch}
+.guide-copy h2{font:300 38px/1.2 var(--font-display),Georgia,serif; letter-spacing:-.025em; margin:0 0 22px}
+.guide-copy p{font-size:15px; line-height:1.95; color:var(--body); margin:0 0 18px}
+.guide-copy p:last-child{margin-bottom:0}
+.guide-copy a{color:var(--link); text-underline-offset:4px}
+.guide-copy kbd{font:inherit; font-size:13px; border:1px solid rgba(107,98,80,.3); border-bottom-width:2px; border-radius:4px; padding:2px 5px; white-space:nowrap}
+.guide-end{text-align:center; padding:72px 0 0}
+.guide-end h2{font:300 clamp(36px,5vw,54px)/1.2 var(--font-display),Georgia,serif; margin:20px 0 28px; letter-spacing:-.025em}
+.guide-text-link{display:block; margin-top:24px; font-size:12px; color:var(--note); text-underline-offset:5px}
+.field-guide footer{border-top:1px solid rgba(107,98,80,.2); padding-top:24px; margin-top:80px}
+.field-guide a:focus-visible,.how-link:focus-visible{outline:2px solid var(--link); outline-offset:6px}
+@media(max-width:1000px){
+  .guide-bird{width:280px; right:-45px; top:40px; opacity:.8}
+  .guide-hero{padding-top:68px}
+  .guide-intro,.guide-section{grid-template-columns:145px minmax(0,1fr); gap:28px}
+  .guide-diagram{margin-left:173px; padding:24px 18px 20px}
+}
+@media(max-width:640px){
+  .guide-hero{padding:48px 0 36px}
+  .guide-eyebrow{font-size:9px; letter-spacing:.07em; margin-bottom:24px}
+  .guide-bird{width:175px; right:-44px; top:44px; opacity:.4}
+  .guide-bird figcaption{display:none}
+  .guide-deck{font-size:14px; max-width:34ch}
+  .guide-desktop-break{display:none}
+  .guide-intro,.guide-section{grid-template-columns:1fr; gap:18px}
+  .guide-intro{padding:32px 0}
+  .guide-intro p{font-size:25px}
+  .guide-margin>span{display:inline; margin-right:14px}
+  .guide-diagram{margin-left:0; padding:22px 14px 18px}
+  .guide-diagram ol{gap:14px}
+  .guide-diagram li+li::before{left:-14px}
+  .guide-diagram strong{font-size:11px}
+  .guide-diagram figcaption{font-size:10px}
+  .guide-section{padding:32px 0}
+  .guide-copy h2{font-size:32px; margin-bottom:18px}
+  .guide-copy p{font-size:14px}
+  .guide-end .fig{font-size:13px}
+  .field-guide footer{gap:18px}
+  .field-guide footer .credit{flex-basis:100%; text-align:left; margin-left:0}
+}
+
+.guide-brand{display:inline-flex; align-items:baseline; gap:18px; text-decoration:none}
