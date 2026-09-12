@@ -28,11 +28,10 @@ const WASHED = new Set(['read aloud,', "Chickadee doesn't."]);
 // and ducks while the narration speaks.
 const BED_LEVEL = 0.55, DUCK_LEVEL = 0.13, BED_KEY = 'chickadee.birdsong';
 
-export default function Narrator({ sentences, total }) {
+export default function Narrator({ sentences }) {
   const audioRef = useRef(null);
   const rafRef = useRef(0);
   const idxRef = useRef(-1);      // read inside rAF without re-arming the loop
-  const lastTick = useRef(0);
   const washRefs = useRef({});    // sentence index -> element, for the spreading wash
   const sentRefs = useRef({});    // sentence index -> element, for following the voice
   const sectionRefs = useRef({}); // section name -> element, for arriving at each section
@@ -44,7 +43,6 @@ export default function Narrator({ sentences, total }) {
 
   const [playing, setPlaying] = useState(false);
   const [idx, setIdx] = useState(-1);
-  const [elapsed, setElapsed] = useState(0);
   // the mini player: the same black pill the extension floats over a page.
   // It appears on the first Listen and stays until its ✕ is pressed.
   const [mini, setMini] = useState(false);
@@ -228,7 +226,6 @@ export default function Narrator({ sentences, total }) {
       const a = audioRef.current;
       if (a && !a.paused) {
         const t = a.currentTime;
-        if (t - lastTick.current > 0.25) { lastTick.current = t; setElapsed(t); }
         const i = sentences.findIndex((s) => t >= s.start && t < s.end);
         if (i !== idxRef.current) { idxRef.current = i; setIdx(i); follow(i); }
         // the wash spreads at the speaking rate, straight off the clock via refs,
@@ -291,7 +288,7 @@ export default function Narrator({ sentences, total }) {
 
   const ended = () => {
     playingRef.current = false; setPlaying(false);
-    setIdx(-1); idxRef.current = -1; setElapsed(0); lastTick.current = 0;
+    setIdx(-1); idxRef.current = -1;
     stopSinging();
     bedTarget.current = BED_LEVEL; settleBed(3.5);
     after(900, () => { for (const el of Object.values(washRefs.current)) el && el.style.setProperty('--p', '0%'); });
@@ -303,7 +300,6 @@ export default function Narrator({ sentences, total }) {
   // "current" sentence to contrast against.
   const reading = playing || idx >= 0;
 
-  const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   const sentClass = (i) => {
     const washed = WASHED.has(sentences[i].text);
     return `sent${washed ? ' washed' : ''}${idx === i ? ' live' : ''}${washed && idx > i ? ' spoken' : ''}`;
@@ -373,9 +369,6 @@ export default function Narrator({ sentences, total }) {
             <a className="how-link" href="/how-it-works">
               <span>How it works</span>
             </a>
-            <span className="elapsed">
-              {mmss(elapsed)} / {mmss(total)} — {playing ? 'speaking' : 'the page reads itself'}
-            </span>
           </div>
         </div>
 

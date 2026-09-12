@@ -12,7 +12,7 @@ export default function Home() {
       <div className="wash wash--tan" aria-hidden="true" />
 
       {/* the masthead lives inside Narrator so the birdsong switch can sit in it */}
-      <Narrator sentences={n.sentences} total={n.total} />
+      <Narrator sentences={n.sentences} />
 
       <footer>
         <span>© {new Date().getFullYear()} Chickadee</span>
