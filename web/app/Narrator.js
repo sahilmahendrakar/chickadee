@@ -406,7 +406,7 @@ export default function Narrator({ sentences }) {
         </div>
         <figure className="print">
           <div className="tape" aria-hidden="true" />
-          <img src="/shots/shot-dark.png"
+          <img src="/shots/shot-light.png"
                alt="Chickadee reading an essay: the sentence currently being spoken is highlighted directly on the page" />
           <figcaption>darioamodei.com/essay/machines-of-loving-grace</figcaption>
         </figure>
