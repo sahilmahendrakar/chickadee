@@ -142,13 +142,13 @@ h1{
    set a little larger than the words; the wash deepens on hover or focus,
    and stays deep once the page has read itself through. */
 .store{
-  position:relative; z-index:0; display:inline-block; padding:12px 12px; margin:0 -12px;
+  position:relative; z-index:0; display:inline-block; padding:12px 14px; margin:0 -14px;
   font-size:14px; letter-spacing:.12em; text-transform:uppercase; line-height:1.2;
   color:var(--ink); text-decoration:none; white-space:nowrap;
 }
 .store::before{
   content:''; position:absolute; z-index:-1; pointer-events:none;
-  left:0; right:0; top:3px; bottom:3px;
+  left:-5px; right:-5px; top:-1px; bottom:-1px;
   background:url(/textures/wash-blue.png) center / 100% 100% no-repeat;
   opacity:.55; transform:rotate(-1deg);
   transition:opacity .35s ease, transform .35s var(--ease);
@@ -339,7 +339,8 @@ footer a:hover{color:var(--link)}
   h1{grid-area:h1}
   .standfirst{grid-area:sub; margin-top:56px}
   .hero .controls{grid-area:ctl; flex-direction:column; align-items:flex-start; row-gap:14px; margin-top:0; position:relative; z-index:5}
-  .hero .store{padding-top:8px; padding-bottom:8px}
+  /* stacked, the wash overshoots the column edge only a little, like a highlighter */
+  .hero .store{padding-top:8px; padding-bottom:8px; margin-left:-8px}
   /* the empty band above the twig is about half the box's width, so the
      pull-up scales with the viewport until the box hits its cap */
   .bird{grid-area:bird; order:0; justify-self:end; width:160%; max-width:440px; margin:clamp(-200px, -30vw, -100px) -24px -30px 0; transform:rotate(-2deg) scale(1.1)}
