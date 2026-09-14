@@ -28,6 +28,8 @@ const WASHED = new Set(['read aloud,', "Chickadee doesn't."]);
 // and ducks while the narration speaks.
 const BED_LEVEL = 0.55, DUCK_LEVEL = 0.13, BED_KEY = 'chickadee.birdsong';
 
+const STORE_URL = 'https://chromewebstore.google.com/detail/chickadee/nbghebngnkkjcgpcmhchpijmcdkclndm';
+
 export default function Narrator({ sentences }) {
   const audioRef = useRef(null);
   const rafRef = useRef(0);
@@ -47,6 +49,8 @@ export default function Narrator({ sentences }) {
   // It appears on the first Listen and stays until its ✕ is pressed.
   const [mini, setMini] = useState(false);
   const [speed, setSpeed] = useState(1);
+  // once the page has read itself through, the wash stays under the store link
+  const [heard, setHeard] = useState(false);
 
   /* ---- the birdsong bed ---- */
   const ac = useRef(null);          // AudioContext, created on mount, running after a gesture
@@ -366,6 +370,11 @@ export default function Narrator({ sentences }) {
           <p className="standfirst">{spans('sub')}</p>
           <div className="controls">
             <button className="btn listen" onClick={toggle}>{playing ? 'Pause' : 'Listen'}</button>
+            {/* the store link is typed, not boxed: the wash the extension paints
+                under a spoken sentence draws in under it instead */}
+            <a className={`store${heard ? ' lit' : ''}`} href={STORE_URL} target="_blank" rel="noopener noreferrer">
+              Add to Chrome
+            </a>
             <a className="how-link" href="/how-it-works">
               <span>How it works</span>
             </a>
@@ -393,7 +402,7 @@ export default function Narrator({ sentences }) {
           </div>
         ) : null}
         <p className="script">{spans('body')}</p>
-        <audio ref={audioRef} src="/audio/narration.mp3" preload="auto" onEnded={ended} />
+        <audio ref={audioRef} src="/audio/narration.mp3" preload="auto" onEnded={() => { setHeard(true); ended(); }} />
       </section>
 
       {/* fig. 2 — one real capture, taped into the sketchbook */}
@@ -427,7 +436,7 @@ export default function Narrator({ sentences }) {
         <div>
           <h2>{spans('install-h')}</h2>
           <p className="req">{spans('install-req')}</p>
-          <a className="btn cta" href="https://chromewebstore.google.com/detail/chickadee/nbghebngnkkjcgpcmhchpijmcdkclndm" target="_blank" rel="noopener noreferrer">Add to Chrome</a>
+          <a className="btn cta" href={STORE_URL} target="_blank" rel="noopener noreferrer">Add to Chrome</a>
           <p className="reqs">{spans('install-reqs')}</p>
         </div>
         <img className="flyaway" src="/birds/8-flyaway.webp" alt="" aria-hidden="true" />
