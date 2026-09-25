@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild';
 import path from 'node:path';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 // The ONNX Runtime WebGPU binaries are ~21MB and come from npm, so they are not
 // committed. Stage them into ext/vendor on every build so a fresh clone can
@@ -12,12 +13,23 @@ for (const f of ['ort-wasm-simd-threaded.jsep.wasm', 'ort-wasm-simd-threaded.jse
   if (fs.existsSync(src)) fs.copyFileSync(src, path.join(VENDOR, f));
 }
 
-// Paradee (the small distilled model) is built by ../research/scripts/export_paradee.py,
-// which is not in git either. Stage the int8 export when it is there.
-const PARADEE = '../research/models/paradee/paradee_int8.onnx';
+// Paradee (the small distilled model) ships inside the extension. Fetch the exact v1.0 file
+// from the Hugging Face Hub, pinned by its hash, so the extension always carries the
+// published model. HF_TOKEN is only needed while the model repo is private.
+const PARADEE_URL = 'https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.0/resolve/v1.0/onnx/paradee_int8.onnx';
+const PARADEE_SHA256 = '60e8f8a1bc7c546488154e9d99ecac6e9c50baf3f4b684c5b0de48ea03b698eb';
+const PARADEE_OUT = 'ext/paradee/paradee.onnx';
+const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 fs.mkdirSync('ext/paradee', { recursive: true });
-if (fs.existsSync(PARADEE)) fs.copyFileSync(PARADEE, 'ext/paradee/paradee.onnx');
-else if (!fs.existsSync('ext/paradee/paradee.onnx')) console.warn('Paradee model missing: run research/scripts/export_paradee.py');
+if (!fs.existsSync(PARADEE_OUT) || sha256(fs.readFileSync(PARADEE_OUT)) !== PARADEE_SHA256) {
+  const headers = process.env.HF_TOKEN ? { Authorization: `Bearer ${process.env.HF_TOKEN}` } : {};
+  const res = await fetch(PARADEE_URL, { headers });
+  if (!res.ok) throw new Error(`Paradee download failed: HTTP ${res.status} from ${PARADEE_URL}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (sha256(buf) !== PARADEE_SHA256) throw new Error('Paradee download does not match the pinned v1.0 hash');
+  fs.writeFileSync(PARADEE_OUT, buf);
+  console.log(`fetched Paradee v1.0 (${(buf.length / 1e6).toFixed(1)} MB)`);
+}
 
 // transformers.js and kokoro-js both carry Node-only code paths (fs, path,
 // fs/promises, sharp, onnxruntime-node). They are guarded by env.IS_NODE and

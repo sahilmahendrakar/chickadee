@@ -8,7 +8,7 @@ function showEngine() {
   $('voice').disabled = light;
   $('voice-field').title = light ? 'Paradee has one voice, distilled from af_heart' : '';
   $('size-note').textContent = light
-    ? 'Paradee (~13 MB) is built in, so nothing to download.'
+    ? 'Paradee (9 MB) is built in, so nothing to download.'
     : 'Voice model (~310 MB) downloads once, then works offline.';
 }
 

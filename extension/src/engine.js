@@ -15,7 +15,7 @@ const DTYPE = 'fp32';     // q8 on webgpu is numerically corrupt; wasm is sub-re
 const DEVICE = 'webgpu';
 
 // Paradee: an 8M-parameter single-voice model distilled from Kokoro (af_heart).
-// It ships inside the extension (~13 MB, int8 weights) and runs on the CPU
+// It ships inside the extension (9 MB, int8 weights) and runs on the CPU
 // (wasm), so it needs no WebGPU and no download.
 const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
 
