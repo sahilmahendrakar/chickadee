@@ -15,14 +15,17 @@ for (const f of ['ort-wasm-simd-threaded.jsep.wasm', 'ort-wasm-simd-threaded.jse
 
 // Paradee (the small distilled model) ships inside the extension. Fetch the exact v1.0 file
 // from the Hugging Face Hub, pinned by its hash, so the extension always carries the
-// published model. HF_TOKEN is only needed while the model repo is private.
+// published model. A Hugging Face login (HF_TOKEN, or `hf auth login`) is only needed
+// while the model repo is private.
 const PARADEE_URL = 'https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.0/resolve/v1.0/onnx/paradee_int8.onnx';
 const PARADEE_SHA256 = '60e8f8a1bc7c546488154e9d99ecac6e9c50baf3f4b684c5b0de48ea03b698eb';
 const PARADEE_OUT = 'ext/paradee/paradee.onnx';
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 fs.mkdirSync('ext/paradee', { recursive: true });
 if (!fs.existsSync(PARADEE_OUT) || sha256(fs.readFileSync(PARADEE_OUT)) !== PARADEE_SHA256) {
-  const headers = process.env.HF_TOKEN ? { Authorization: `Bearer ${process.env.HF_TOKEN}` } : {};
+  const tokenFile = path.join(process.env.HOME || '', '.cache/huggingface/token');   // written by `hf auth login`
+  const token = process.env.HF_TOKEN || (fs.existsSync(tokenFile) ? fs.readFileSync(tokenFile, 'utf8').trim() : '');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const res = await fetch(PARADEE_URL, { headers });
   if (!res.ok) throw new Error(`Paradee download failed: HTTP ${res.status} from ${PARADEE_URL}`);
   const buf = Buffer.from(await res.arrayBuffer());
