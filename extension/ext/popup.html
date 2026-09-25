@@ -60,6 +60,11 @@ button:active{transform:translateY(1px)}
 .keys{display:flex;justify-content:center;gap:14px;margin-bottom:8px;flex-wrap:wrap}
 kbd{border:1px solid var(--ink);border-radius:3px;padding:1px 5px;
   font:10.5px var(--mono);color:var(--ink);background:rgba(255,250,236,.6)}
+.keys em{font-style:italic;color:var(--meta)}
+.remap{text-align:center;margin:-2px 0 8px}
+.remap a{color:var(--meta);font-size:10.5px;letter-spacing:.06em;
+  text-decoration:underline dotted;text-underline-offset:3px}
+.remap a:hover{color:var(--ink)}
 .foot .ctx{text-align:center;margin-bottom:8px}
 .foot b{color:var(--ink);font-weight:400;mix-blend-mode:multiply;
   background:url("wash.png") center / 100% 100% no-repeat;
@@ -110,10 +115,13 @@ kbd{border:1px solid var(--ink);border-radius:3px;padding:1px 5px;
 </div>
 
 <div class="foot">
-  <div class="keys">
+  <!-- Filled from chrome.commands.getAll() so it shows whatever the user has
+       actually bound; the defaults below are only the first paint. -->
+  <div class="keys" id="keys">
     <span><kbd>⌥</kbd><kbd>R</kbd> read</span>
     <span><kbd>⌥</kbd><kbd>P</kbd> play / pause</span>
   </div>
+  <div class="remap"><a id="shortcuts" href="#">Change shortcuts</a></div>
   <div class="ctx">Right-click any word → <b>Read aloud from here</b></div>
   <div class="priv">Nothing leaves your machine.<br>
     Voice model (~310 MB) downloads once, then works offline.</div>

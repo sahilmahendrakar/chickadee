@@ -181,7 +181,12 @@
       .forEach(([v,t]) => { const o=document.createElement('option'); o.value=v; o.textContent=t;
         o.style.color='#000'; if(v==='1') o.selected=true; speed.appendChild(o); });
     speed.onchange = (e) => send({ type: 'KL_SPEED', speed: parseFloat(e.target.value) });
+    const grip = document.createElement('span');
+    grip.title = 'Drag to move';
+    grip.textContent = '⠿';
+    grip.style.cssText = 'cursor:grab;color:#777;font-size:13px;padding:0 4px 0 2px;user-select:none;';
     bar.append(
+      grip,
       mkBtn('‹', 'Previous sentence', () => send({ type: 'KL_PREV' })),
       playBtn,
       mkBtn('›', 'Next sentence', () => send({ type: 'KL_NEXT' })),
@@ -189,13 +194,61 @@
       mkBtn('✕', 'Stop', stop)
     );
     document.body.appendChild(bar);
+    makeDraggable(bar);
     return bar;
   }
+  // The bar can be dragged anywhere by its grip or its background (not the
+  // controls). It starts bottom-centre; once moved it is pinned by left/top and
+  // the spot is remembered per device, clamped to the viewport on restore.
+  function placeBar(x, y) {
+    const w = bar.offsetWidth, h = bar.offsetHeight;
+    x = Math.min(Math.max(0, x), Math.max(0, innerWidth - w));
+    y = Math.min(Math.max(0, y), Math.max(0, innerHeight - h));
+    bar.style.transform = 'none'; bar.style.bottom = 'auto';
+    bar.style.left = x + 'px'; bar.style.top = y + 'px';
+  }
+  function makeDraggable(el) {
+    chrome.storage.local.get({ barPos: null }, ({ barPos }) => {
+      if (barPos && bar === el) placeBar(barPos.x, barPos.y);
+    });
+    let drag = null;
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('button,select')) return;
+      const r = el.getBoundingClientRect();
+      drag = { sx: e.clientX, sy: e.clientY, ox: r.left, oy: r.top, moved: false };
+      el.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+      if (!drag.moved && Math.hypot(dx, dy) < 3) return;   // a click, not a drag
+      drag.moved = true;
+      el.style.cursor = 'grabbing';
+      placeBar(drag.ox + dx, drag.oy + dy);
+    });
+    const end = (e) => {
+      if (!drag) return;
+      if (drag.moved) {
+        const r = el.getBoundingClientRect();
+        chrome.storage.local.set({ barPos: { x: r.left, y: r.top } });
+      }
+      drag = null; el.style.cursor = '';
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  }
+  function keepInView() {
+    if (bar && bar.style.top && bar.style.top !== 'auto')
+      placeBar(parseFloat(bar.style.left), parseFloat(bar.style.top));
+  }
+  addEventListener('resize', keepInView);
   function setStatus(t) {
     const e = document.getElementById('kokoro-status');
     if (!e) return;
     e.textContent = t || '';
     e.style.display = t ? '' : 'none';
+    keepInView();                        // the text can widen a bar parked near an edge
   }
   function setPlay(p) { playing = p; const e = document.getElementById('kokoro-play'); if (e) e.textContent = p ? '❚❚' : '▶'; }
 
