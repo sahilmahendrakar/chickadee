@@ -385,6 +385,14 @@
     }
   });
 
+  // A model or voice picked in the popup while this page is being read applies
+  // right away, from the current sentence.
+  chrome.storage.onChanged.addListener((ch, area) => {
+    if (area !== 'sync' || !frame || !(ch.engine || ch.voice)) return;
+    chrome.storage.sync.get({ voice: 'af_heart', engine: 'kokoro' }, (cfg) =>
+      send({ type: 'KL_MODEL', engine: cfg.engine, voice: cfg.voice }));
+  });
+
   chrome.runtime.onMessage.addListener((req, _s, respond) => {
     if (req.action === 'PING')   { respond({ ok: true }); return; }
     if (req.action === 'READ')   { start(); respond({ ok: true }); return; }

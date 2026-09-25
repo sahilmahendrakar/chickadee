@@ -19,7 +19,7 @@ const DEVICE = 'webgpu';
 // (wasm), so it needs no WebGPU and no download.
 const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
 
-let tts = null, engine = 'kokoro', sentences = [], cache = new Map();
+let models = {}, tts = null, engine = 'kokoro', gen = 0, sentences = [], cache = new Map();
 let current = 0, stopped = false, voice = 'af_heart', speed = 1.0;
 let audio;
 
@@ -31,30 +31,35 @@ async function loadParadee() {
   const session = await ort.InferenceSession.create(PARADEE_URL, { executionProviders: ['wasm'] });
   const tok = new PreTrainedTokenizer(tokenizerJSON, { model_max_length: 512, pad_token: '$', unk_token: '$' });
   const t = new KokoroTTS(null, (phonemes, opts) => tok(toMisaki(phonemes), opts));
-  let queue = Promise.resolve();   // one run at a time on the session; prefetch asks for two at once
-  t.generate_from_ids = (ids) => {
-    const run = queue.then(async () => {
-      const { waveform } = await session.run({
-        input_ids: new ort.Tensor('int64', ids.data, ids.dims),
-        speed: new ort.Tensor('float32', new Float32Array([1]), [1]),
-      });
-      return new RawAudio(waveform.data, 24000);
+  t.generate_from_ids = async (ids) => {
+    const { waveform } = await session.run({
+      input_ids: new ort.Tensor('int64', ids.data, ids.dims),
+      speed: new ort.Tensor('float32', new Float32Array([1]), [1]),
     });
-    queue = run.catch(() => {});
-    return run;
+    return new RawAudio(waveform.data, 24000);
   };
   return t;
 }
 
+// One generation at a time, across both models. onnxruntime-web refuses a run
+// ("Session already started") while another session's run is in flight, which
+// happens when the model is switched with the old model's prefetch still going.
+let runQueue = Promise.resolve();
 async function synth(i) {
-  // Raw model output, untouched. Trimming/normalising the leading and trailing
-  // silence was tried and reverted: it made sentence starts and ends sound wrong.
-  const raw = await tts.generate(sentences[i], { voice: engine === 'paradee' ? 'af_heart' : voice, speed: 1.0 });
+  const g = gen, model = tts, v = engine === 'paradee' ? 'af_heart' : voice;
+  const run = runQueue.then(() => {
+    if (g !== gen) throw new Error('stale');   // the model was switched while this waited
+    // Raw model output, untouched. Trimming/normalising the leading and trailing
+    // silence was tried and reverted: it made sentence starts and ends sound wrong.
+    return model.generate(sentences[i], { voice: v, speed: 1.0 });
+  });
+  runQueue = run.catch(() => {});
+  const raw = await run;
   return URL.createObjectURL(raw.toBlob());
 }
 function getAudio(i) {
   if (i < 0 || i >= sentences.length) return null;
-  if (!cache.has(i)) cache.set(i, synth(i).catch(e => { cache.delete(i); throw e; }));
+  if (!cache.has(i)) { const p = synth(i).catch(e => { if (cache.get(i) === p) cache.delete(i); throw e; }); cache.set(i, p); }
   return cache.get(i);
 }
 // chunk N+1 and N+2 generate while chunk N plays
@@ -63,16 +68,18 @@ function prefetch(i) {
   for (const k of [...cache.keys()]) if (k < i - 2) cache.delete(k);
 }
 
-async function play(i) {
+async function play(i, resume = true) {
   if (stopped || i < 0 || i >= sentences.length) return;
   current = i;
+  const g = gen;
   emit({ type: 'KL_SENTENCE', i, total: sentences.length });
   let url;
   try { url = await getAudio(i); }
-  catch (e) { emit({ type: 'KL_STATUS', text: 'Generation failed: ' + (e.message || e) }); return; }
-  if (stopped || current !== i) return;
+  catch (e) { if (g === gen) emit({ type: 'KL_STATUS', text: 'Generation failed: ' + (e.message || e) }); return; }
+  if (stopped || current !== i || g !== gen) return;
   audio.src = url;
   audio.playbackRate = speed;
+  if (!resume) { prefetch(i); return; }
   try { await audio.play(); }
   catch (e) { if (e.name === 'NotAllowedError') emit({ type: 'KL_BLOCKED' }); }
   prefetch(i);
@@ -95,24 +102,22 @@ async function webgpuProblem() {
   }
 }
 
-async function init(payload) {
-  sentences = payload.sentences || [];
-  voice = payload.voice || voice;
-  speed = payload.speed || speed;
-  if (!sentences.length) { emit({ type: 'KL_STATUS', text: 'No readable text found.' }); return; }
-  const want = payload.engine === 'paradee' ? 'paradee' : 'kokoro';
-  if (tts && want !== engine) { tts = null; cache.clear(); }
-  engine = want;
+// Makes `which` the current model, loading it the first time. Both stay in memory
+// once loaded, so switching back and forth mid-page is instant after the first time.
+async function loadModel(which) {
+  const want = which === 'paradee' ? 'paradee' : 'kokoro';
+  if (want !== engine) { engine = want; tts = null; gen++; cache.clear(); }
+  if (!tts && models[engine]) tts = models[engine];
   if (!tts && engine === 'paradee') {
-    try { tts = await loadParadee(); }
-    catch (e) { emit({ type: 'KL_STATUS', text: 'Model failed: ' + (e.message || e) }); return; }
+    try { tts = models.paradee = await loadParadee(); }
+    catch (e) { emit({ type: 'KL_STATUS', text: 'Model failed: ' + (e.message || e) }); return false; }
   }
   if (!tts) {
     // Hard requirement. There is no usable fallback: q8-on-webgpu is numerically
     // corrupt and every wasm config generates slower than it plays. Check BEFORE
     // downloading ~310MB so an unsupported machine fails in a second, not a minute.
     const why = await webgpuProblem();
-    if (why) { emit({ type: 'KL_UNSUPPORTED', reason: why }); return; }
+    if (why) { emit({ type: 'KL_UNSUPPORTED', reason: why }); return false; }
     // transformers.js reports 'download' and 'progress' even when it is reading the
     // model from its cache, so ask the cache directly and only show progress on a
     // genuine first-run download.
@@ -123,15 +128,38 @@ async function init(payload) {
     } catch (e) { /* no Cache API: treat as a first run */ }
     if (!cached) emit({ type: 'KL_STATUS', text: 'First run: downloading voice (~310 MB, one time)…', busy: true });
     try {
-      tts = await KokoroTTS.from_pretrained(MODEL, {
+      tts = models.kokoro = await KokoroTTS.from_pretrained(MODEL, {
         dtype: DTYPE, device: DEVICE,
         progress_callback: (p) => {
           if (!cached && p.status === 'progress' && p.progress != null)
             emit({ type: 'KL_STATUS', text: `Downloading model ${Math.round(p.progress)}%`, busy: true });
         }
       });
-    } catch (e) { emit({ type: 'KL_STATUS', text: 'Model failed: ' + (e.message || e) }); return; }
+    } catch (e) { emit({ type: 'KL_STATUS', text: 'Model failed: ' + (e.message || e) }); return false; }
   }
+  return true;
+}
+
+// The popup changed the model or voice while a page is being read: regenerate
+// from the current sentence with the new one, keeping play/pause as it was.
+async function switchModel(d) {
+  const want = d.engine === 'paradee' ? 'paradee' : 'kokoro';
+  const voiceChanged = !!d.voice && d.voice !== voice;
+  voice = d.voice || voice;
+  if (want === engine && !(voiceChanged && engine === 'kokoro')) return;
+  const resume = !audio.paused;
+  audio.pause();
+  gen++; cache.clear();
+  if (!await loadModel(want)) return;
+  if (!stopped && sentences.length) play(current, resume);
+}
+
+async function init(payload) {
+  sentences = payload.sentences || [];
+  voice = payload.voice || voice;
+  speed = payload.speed || speed;
+  if (!sentences.length) { emit({ type: 'KL_STATUS', text: 'No readable text found.' }); return; }
+  if (!await loadModel(payload.engine)) return;
   stopped = false;
   emit({ type: 'KL_FIRST' });
   play(payload.start || 0);
@@ -154,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'KL_GOTO':   play(d.i); break;
       case 'KL_SPEED':  speed = d.speed; audio.playbackRate = speed; break;
       case 'KL_VOICE':  voice = d.voice; cache.clear(); play(current); break;
+      case 'KL_MODEL':  switchModel(d); break;
       case 'KL_STOP':   stopped = true; audio.pause(); audio.src = ''; break;
     }
   });

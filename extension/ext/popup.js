@@ -24,7 +24,7 @@ function save() {
   const v = { engine: $('engine').value, voice: $('voice').value, speed: parseFloat($('speed').value) };
   chrome.storage.sync.set(v, () => {
     const el = $('saved');
-    el.textContent = 'Saved — applies to the next read';
+    el.textContent = 'Saved';
     el.classList.add('on');
     setTimeout(() => el.classList.remove('on'), 1800);
   });
