@@ -2,7 +2,10 @@
 // the bundled ONNX runtime and WebGPU). It owns the model and the <audio>
 // element; the content script owns all visible UI and on-page highlighting.
 import { KokoroTTS } from 'kokoro-js';
-import { env } from '@huggingface/transformers';
+import { env, PreTrainedTokenizer, RawAudio } from '@huggingface/transformers';
+import * as ort from 'onnxruntime-web';
+import tokenizerJSON from './paradee-tokenizer.json';
+import { toMisaki } from './misaki.js';
 
 env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('vendor/');
 env.allowLocalModels = false;
@@ -11,16 +14,42 @@ const MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX';
 const DTYPE = 'fp32';     // q8 on webgpu is numerically corrupt; wasm is sub-realtime
 const DEVICE = 'webgpu';
 
-let tts = null, sentences = [], cache = new Map();
+// Paradee: an 8M-parameter single-voice model distilled from Kokoro (af_heart).
+// It ships inside the extension (~13 MB, int8 weights) and runs on the CPU
+// (wasm), so it needs no WebGPU and no download.
+const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
+
+let tts = null, engine = 'kokoro', sentences = [], cache = new Map();
 let current = 0, stopped = false, voice = 'af_heart', speed = 1.0;
 let audio;
 
 const emit = (msg) => parent.postMessage(msg, '*');
 
+// Reuses kokoro-js for text -> phonemes -> token ids and swaps in Paradee for
+// the model call. Paradee has one voice, so the voice setting does not apply.
+async function loadParadee() {
+  const session = await ort.InferenceSession.create(PARADEE_URL, { executionProviders: ['wasm'] });
+  const tok = new PreTrainedTokenizer(tokenizerJSON, { model_max_length: 512, pad_token: '$', unk_token: '$' });
+  const t = new KokoroTTS(null, (phonemes, opts) => tok(toMisaki(phonemes), opts));
+  let queue = Promise.resolve();   // one run at a time on the session; prefetch asks for two at once
+  t.generate_from_ids = (ids) => {
+    const run = queue.then(async () => {
+      const { waveform } = await session.run({
+        input_ids: new ort.Tensor('int64', ids.data, ids.dims),
+        speed: new ort.Tensor('float32', new Float32Array([1]), [1]),
+      });
+      return new RawAudio(waveform.data, 24000);
+    });
+    queue = run.catch(() => {});
+    return run;
+  };
+  return t;
+}
+
 async function synth(i) {
   // Raw model output, untouched. Trimming/normalising the leading and trailing
   // silence was tried and reverted: it made sentence starts and ends sound wrong.
-  const raw = await tts.generate(sentences[i], { voice, speed: 1.0 });
+  const raw = await tts.generate(sentences[i], { voice: engine === 'paradee' ? 'af_heart' : voice, speed: 1.0 });
   return URL.createObjectURL(raw.toBlob());
 }
 function getAudio(i) {
@@ -71,6 +100,13 @@ async function init(payload) {
   voice = payload.voice || voice;
   speed = payload.speed || speed;
   if (!sentences.length) { emit({ type: 'KL_STATUS', text: 'No readable text found.' }); return; }
+  const want = payload.engine === 'paradee' ? 'paradee' : 'kokoro';
+  if (tts && want !== engine) { tts = null; cache.clear(); }
+  engine = want;
+  if (!tts && engine === 'paradee') {
+    try { tts = await loadParadee(); }
+    catch (e) { emit({ type: 'KL_STATUS', text: 'Model failed: ' + (e.message || e) }); return; }
+  }
   if (!tts) {
     // Hard requirement. There is no usable fallback: q8-on-webgpu is numerically
     // corrupt and every wasm config generates slower than it plays. Check BEFORE

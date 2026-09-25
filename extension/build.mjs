@@ -12,6 +12,13 @@ for (const f of ['ort-wasm-simd-threaded.jsep.wasm', 'ort-wasm-simd-threaded.jse
   if (fs.existsSync(src)) fs.copyFileSync(src, path.join(VENDOR, f));
 }
 
+// Paradee (the small distilled model) is built by ../research/scripts/export_paradee.py,
+// which is not in git either. Stage the int8 export when it is there.
+const PARADEE = '../research/models/paradee/paradee_int8.onnx';
+fs.mkdirSync('ext/paradee', { recursive: true });
+if (fs.existsSync(PARADEE)) fs.copyFileSync(PARADEE, 'ext/paradee/paradee.onnx');
+else if (!fs.existsSync('ext/paradee/paradee.onnx')) console.warn('Paradee model missing: run research/scripts/export_paradee.py');
+
 // transformers.js and kokoro-js both carry Node-only code paths (fs, path,
 // fs/promises, sharp, onnxruntime-node). They are guarded by env.IS_NODE and
 // never execute in a browser, but esbuild still has to resolve them. Marking

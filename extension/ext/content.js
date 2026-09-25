@@ -327,9 +327,9 @@
     ensureStyle();
     makeBar();
     if (frame) {
-      chrome.storage.sync.get({ voice: 'af_heart', speed: 1 }, (cfg) => {
+      chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'kokoro' }, (cfg) => {
         send({ type: 'KL_INIT', sentences: sentences.map(s => s.text.slice(0, 380)),
-               voice: cfg.voice, speed: cfg.speed });
+               voice: cfg.voice, speed: cfg.speed, engine: cfg.engine });
       });
       return;
     }
@@ -348,9 +348,9 @@
     if (!d || typeof d !== 'object') return;
     switch (d.type) {
       case 'KL_READY':
-        chrome.storage.sync.get({ voice: 'af_heart', speed: 1 }, (cfg) => {
+        chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'kokoro' }, (cfg) => {
           send({ type: 'KL_INIT', sentences: sentences.map(s => s.text.slice(0, 380)),
-                 voice: cfg.voice, speed: cfg.speed });
+                 voice: cfg.voice, speed: cfg.speed, engine: cfg.engine });
         });
         break;
       case 'KL_FIRST':

@@ -36,6 +36,7 @@ select{
   transition:background-color .15s;
 }
 select:hover{background-color:rgba(255,250,236,.7)}
+select:disabled{opacity:.45;cursor:not-allowed}
 select:focus{outline:none;box-shadow:0 0 0 3px rgba(201,162,39,.28)}
 option{color:var(--ink);background:var(--paper)}
 optgroup{color:var(--meta);font-style:normal}
@@ -80,6 +81,14 @@ kbd{border:1px solid var(--ink);border-radius:3px;padding:1px 5px;
 
 <div class="body">
   <div class="field">
+    <label for="engine">Model</label>
+    <select id="engine">
+      <option value="kokoro">Kokoro — full quality</option>
+      <option value="paradee">Paradee — light, no GPU</option>
+    </select>
+  </div>
+
+  <div class="field" id="voice-field">
     <label for="voice">Voice</label>
     <select id="voice">
       <optgroup label="American English">
@@ -124,7 +133,7 @@ kbd{border:1px solid var(--ink);border-radius:3px;padding:1px 5px;
   <div class="remap"><a id="shortcuts" href="#">Change shortcuts</a></div>
   <div class="ctx">Right-click any word → <b>Read aloud from here</b></div>
   <div class="priv">Nothing leaves your machine.<br>
-    Voice model (~310 MB) downloads once, then works offline.</div>
+    <span id="size-note">Voice model (~310 MB) downloads once, then works offline.</span></div>
 </div>
 
 <script src="popup.js"></script></body></html>

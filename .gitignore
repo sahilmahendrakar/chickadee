@@ -8,3 +8,7 @@ out/
 extension/ext/engine.bundle.js
 extension/ext/vendor/*.wasm
 extension/ext/vendor/*.mjs
+extension/ext/paradee/*.onnx
+
+# Claude Code personal overrides
+.claude/settings.local.json

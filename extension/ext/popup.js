@@ -1,13 +1,27 @@
 const $ = (id) => document.getElementById(id);
-const DEFAULTS = { voice: 'af_heart', speed: 1 };
+const DEFAULTS = { voice: 'af_heart', speed: 1, engine: 'kokoro' };
+
+// Paradee is a small model distilled from Kokoro's af_heart voice. It has that
+// one voice, ships inside the extension, and runs without WebGPU.
+function showEngine() {
+  const light = $('engine').value === 'paradee';
+  $('voice').disabled = light;
+  $('voice-field').title = light ? 'Paradee has one voice, distilled from af_heart' : '';
+  $('size-note').textContent = light
+    ? 'Paradee (~13 MB) is built in, so nothing to download.'
+    : 'Voice model (~310 MB) downloads once, then works offline.';
+}
 
 chrome.storage.sync.get(DEFAULTS, (s) => {
+  $('engine').value = s.engine;
   $('voice').value = s.voice;
   $('speed').value = String(s.speed);
+  showEngine();
 });
 
 function save() {
-  const v = { voice: $('voice').value, speed: parseFloat($('speed').value) };
+  showEngine();
+  const v = { engine: $('engine').value, voice: $('voice').value, speed: parseFloat($('speed').value) };
   chrome.storage.sync.set(v, () => {
     const el = $('saved');
     el.textContent = 'Saved — applies to the next read';
@@ -15,6 +29,7 @@ function save() {
     setTimeout(() => el.classList.remove('on'), 1800);
   });
 }
+$('engine').onchange = save;
 $('voice').onchange = save;
 $('speed').onchange = save;
 
