@@ -38,12 +38,7 @@ function save(ev) {
   // Only an actual pick in the Model menu is stored, so the automatic default
   // keeps following the computer until the user chooses.
   if (ev && ev.target === $('engine')) v.engine = $('engine').value;
-  chrome.storage.sync.set(v, () => {
-    const el = $('saved');
-    el.textContent = 'Saved';
-    el.classList.add('on');
-    setTimeout(() => el.classList.remove('on'), 1800);
-  });
+  chrome.storage.sync.set(v);
 }
 $('engine').onchange = save;
 $('voice').onchange = save;
