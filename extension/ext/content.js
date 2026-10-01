@@ -327,7 +327,7 @@
     ensureStyle();
     makeBar();
     if (frame) {
-      chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'kokoro' }, (cfg) => {
+      chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'auto' }, (cfg) => {
         send({ type: 'KL_INIT', sentences: sentences.map(s => s.text.slice(0, 380)),
                voice: cfg.voice, speed: cfg.speed, engine: cfg.engine });
       });
@@ -348,7 +348,7 @@
     if (!d || typeof d !== 'object') return;
     switch (d.type) {
       case 'KL_READY':
-        chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'kokoro' }, (cfg) => {
+        chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'auto' }, (cfg) => {
           send({ type: 'KL_INIT', sentences: sentences.map(s => s.text.slice(0, 380)),
                  voice: cfg.voice, speed: cfg.speed, engine: cfg.engine });
         });
@@ -389,7 +389,7 @@
   // right away, from the current sentence.
   chrome.storage.onChanged.addListener((ch, area) => {
     if (area !== 'sync' || !frame || !(ch.engine || ch.voice)) return;
-    chrome.storage.sync.get({ voice: 'af_heart', engine: 'kokoro' }, (cfg) =>
+    chrome.storage.sync.get({ voice: 'af_heart', engine: 'auto' }, (cfg) =>
       send({ type: 'KL_MODEL', engine: cfg.engine, voice: cfg.voice }));
   });
 

@@ -1,5 +1,12 @@
 const $ = (id) => document.getElementById(id);
-const DEFAULTS = { voice: 'af_heart', speed: 1, engine: 'kokoro' };
+// engine 'auto' means the user has not picked a model: Kokoro where WebGPU works,
+// Paradee where it does not. The engine page makes the same check.
+const DEFAULTS = { voice: 'af_heart', speed: 1, engine: 'auto' };
+
+async function hasWebGPU() {
+  try { return !!(navigator.gpu && await navigator.gpu.requestAdapter()); }
+  catch (e) { return false; }
+}
 
 // Paradee is a small model distilled from Kokoro's af_heart voice. It has that
 // one voice, ships inside the extension, and runs without WebGPU.
@@ -12,16 +19,25 @@ function showEngine() {
     : 'Voice model (~310 MB) downloads once, then works offline.';
 }
 
-chrome.storage.sync.get(DEFAULTS, (s) => {
-  $('engine').value = s.engine;
+chrome.storage.sync.get(DEFAULTS, async (s) => {
+  const gpu = await hasWebGPU();
+  if (!gpu) {
+    const k = $('engine').querySelector('option[value="kokoro"]');
+    k.disabled = true;
+    k.textContent = 'Kokoro — needs WebGPU';
+  }
+  $('engine').value = gpu && s.engine !== 'paradee' ? 'kokoro' : 'paradee';
   $('voice').value = s.voice;
   $('speed').value = String(s.speed);
   showEngine();
 });
 
-function save() {
+function save(ev) {
   showEngine();
-  const v = { engine: $('engine').value, voice: $('voice').value, speed: parseFloat($('speed').value) };
+  const v = { voice: $('voice').value, speed: parseFloat($('speed').value) };
+  // Only an actual pick in the Model menu is stored, so the automatic default
+  // keeps following the computer until the user chooses.
+  if (ev && ev.target === $('engine')) v.engine = $('engine').value;
   chrome.storage.sync.set(v, () => {
     const el = $('saved');
     el.textContent = 'Saved';

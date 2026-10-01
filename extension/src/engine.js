@@ -104,8 +104,18 @@ async function webgpuProblem() {
 
 // Makes `which` the current model, loading it the first time. Both stay in memory
 // once loaded, so switching back and forth mid-page is instant after the first time.
+// Which model to use. Paradee when it is asked for, and also whenever WebGPU is
+// missing: Kokoro cannot run without it, so "no choice made yet" and "Kokoro chosen
+// on another computer" both fall back to Paradee instead of failing.
+let gpuCheck = null;
+async function pickEngine(which) {
+  if (which === 'paradee') return 'paradee';
+  gpuCheck ??= webgpuProblem();
+  return (await gpuCheck) ? 'paradee' : 'kokoro';
+}
+
 async function loadModel(which) {
-  const want = which === 'paradee' ? 'paradee' : 'kokoro';
+  const want = await pickEngine(which);
   if (want !== engine) { engine = want; tts = null; gen++; cache.clear(); }
   if (!tts && models[engine]) tts = models[engine];
   if (!tts && engine === 'paradee') {
@@ -143,7 +153,7 @@ async function loadModel(which) {
 // The popup changed the model or voice while a page is being read: regenerate
 // from the current sentence with the new one, keeping play/pause as it was.
 async function switchModel(d) {
-  const want = d.engine === 'paradee' ? 'paradee' : 'kokoro';
+  const want = await pickEngine(d.engine);
   const voiceChanged = !!d.voice && d.voice !== voice;
   voice = d.voice || voice;
   if (want === engine && !(voiceChanged && engine === 'kokoro')) return;
