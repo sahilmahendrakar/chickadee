@@ -15,7 +15,7 @@ function showEngine() {
   $('voice').disabled = light;
   $('voice-field').title = light ? 'Paradee has one voice, distilled from af_heart' : '';
   $('size-note').textContent = light
-    ? 'Paradee is built in, so there is nothing to download.'
+    ? 'Paradee is built in and less resource-intensive.'
     : 'Kokoro voice model (~310 MB) downloads once, then works offline.';
 }
 
