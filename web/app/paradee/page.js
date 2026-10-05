@@ -22,6 +22,7 @@ const source = 'https://github.com/sahilmahendrakar/chickadee';
 
 // The paper PDF on GitHub until the arXiv page is out.
 const ARXIV_URL = 'https://github.com/sahilmahendrakar/paradee/blob/main/paper/Paradee-Mahendrakar-2026.pdf';
+const COVER = { url: `${ASSETS}/img/cover.png`, width: 1456, height: 816, alt: 'A watercolour chickadee and a small blue parakeet on a twig.' };
 const PAPER_TITLE = 'Paradee: Distilling Kokoro-82M into an 8M-Parameter Single-Voice Text-to-Speech Model';
 
 export const metadata = {
@@ -35,12 +36,13 @@ export const metadata = {
     publishedTime: post.date,
     url: URL,
     siteName: 'Chickadee',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Chickadee — a watercolour chickadee on a twig. Any page, read aloud, locally.' }],
+    images: [COVER],
   },
   twitter: {
     card: 'summary_large_image',
     title: post.title,
     description: post.subtitle,
+    images: [COVER.url],
   },
 };
 
