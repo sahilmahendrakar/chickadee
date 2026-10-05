@@ -82,7 +82,7 @@
   text-wrap: pretty;
   margin: 20px 0 0;
 }
-.pd-cover { display: block; width: 100%; height: auto; margin-top: 36px; mix-blend-mode: multiply; }
+.pd-cover { display: block; width: 84%; height: auto; margin: 36px auto 0; mix-blend-mode: multiply; }
 .pd-meta {
   display: flex;
   flex-wrap: wrap;
