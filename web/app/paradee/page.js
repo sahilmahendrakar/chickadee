@@ -247,10 +247,8 @@ export default function ParadeePost() {
               under Apache 2.0, the same license as Kokoro.
             </p>
             <p>
-              <em>
-                A complete technical write up can be found in{' '}
-                {ARXIV_URL ? <a href={ARXIV_URL}>{PAPER_TITLE}</a> : PAPER_TITLE}.
-              </em>
+              <em>A complete technical write up can be found in</em>{' '}
+              {ARXIV_URL ? <a href={ARXIV_URL}>{PAPER_TITLE}</a> : PAPER_TITLE}.
             </p>
           </div>
         </article>
