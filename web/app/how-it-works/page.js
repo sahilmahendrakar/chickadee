@@ -61,7 +61,7 @@ export default function HowItWorks() {
             <div className="guide-margin"><span>02</span> Behind the voice</div>
             <div className="guide-copy">
               <h2>Two small models, close to home.</h2>
-              <p>Chickadee has two speech models. Kokoro-82M is an open speech model with the most natural voice, and twelve voices to choose from. Chickadee runs it on your computer’s graphics hardware through a browser feature called WebGPU.</p>
+              <p>Chickadee has two speech models. Kokoro-82M is an open speech model with the most natural voice, and twelve voices to choose from. When your computer has WebGPU, a browser feature for using the graphics hardware, Chickadee runs Kokoro on it.</p>
               <p>Paradee is a much smaller model, distilled from Kokoro. It is about 9 MB and has one voice. It runs on any computer’s processor, so it needs no WebGPU and no download. Chickadee uses Kokoro where your computer supports it and Paradee everywhere else, and you can switch between them any time. <a href="/paradee">Read how Paradee was made</a>.</p>
               <p>It works through the page sentence by sentence, preparing the next few while the current one plays. The article stays where it is, with each spoken sentence highlighted in place. You can follow along with your eyes, or just listen.</p>
             </div>
@@ -81,7 +81,7 @@ export default function HowItWorks() {
             <div className="guide-margin"><span>04</span> The practical bits</div>
             <div className="guide-copy">
               <h2>A few things to know.</h2>
-              <p>You’ll need a Chrome-based browser, such as Chrome or Edge. Kokoro also needs a computer with WebGPU support. Chickadee checks for it, and uses Paradee when it isn’t there. Speech generation uses your computer’s resources, so performance depends on your hardware.</p>
+              <p>You’ll need a Chrome-based browser, such as Chrome or Edge, and that’s it. Chickadee works on any computer. It uses Kokoro when your computer has WebGPU, and Paradee when it doesn’t. Speech generation uses your computer’s resources, so performance depends on your hardware.</p>
               <p>Start with a regular article page. Browser settings pages and other protected pages cannot be read by the extension. Offline speech also cannot open an article you haven’t loaded yet.</p>
               <p>Chickadee is free and open source. Because your computer makes the audio, there is no per-read speech server bill, subscription, or API key. You can <a href={source}>look through the source</a> or <a href={`${source}/issues`}>report a rough edge</a>.</p>
             </div>

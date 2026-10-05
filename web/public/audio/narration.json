@@ -201,7 +201,7 @@
     },
     {
       "zone": "install-reqs",
-      "text": "Kokoro needs a WebGPU-capable browser and machine.",
+      "text": "Kokoro uses WebGPU when your computer has it.",
       "start": 107.01,
       "end": 110.91
     },
