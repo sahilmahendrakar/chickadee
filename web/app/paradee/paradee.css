@@ -82,6 +82,7 @@
   text-wrap: pretty;
   margin: 20px 0 0;
 }
+.pd-cover { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; margin-top: 36px; border-radius: 6px; }
 .pd-meta {
   display: flex;
   flex-wrap: wrap;
