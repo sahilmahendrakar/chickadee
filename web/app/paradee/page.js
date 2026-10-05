@@ -65,7 +65,7 @@ export default function ParadeePost() {
             <header className="pd-header">
               <h1 className="pd-title">{post.title}</h1>
               <p className="pd-subtitle">{post.subtitle}</p>
-              <img className="pd-cover" src={`${ASSETS}/img/cover-paper.png`} alt={COVER.alt} width={COVER.width} height={COVER.height} />
+              <img className="pd-cover" src={`${ASSETS}/img/cover-paper.png`} alt={COVER.alt} width={874} height={404} />
               <div className="pd-meta">
                 <time dateTime={post.date}>{DATE_LABEL}</time>
                 <span aria-hidden="true">·</span>
