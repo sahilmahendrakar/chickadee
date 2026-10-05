@@ -20,8 +20,8 @@ const ASSETS = '/paradee';
 const URL = 'https://sahilmahendrakar.com/thoughts/paradee';
 const source = 'https://github.com/sahilmahendrakar/chickadee';
 
-// TODO: fill in once the paper is announced on arXiv.
-const ARXIV_URL = '';
+// The paper PDF on GitHub until the arXiv page is out.
+const ARXIV_URL = 'https://github.com/sahilmahendrakar/paradee/blob/main/paper/Paradee-Mahendrakar-2026.pdf';
 const PAPER_TITLE = 'Paradee: Distilling Kokoro-82M into an 8M-Parameter Single-Voice Text-to-Speech Model';
 
 export const metadata = {
