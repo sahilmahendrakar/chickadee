@@ -11,7 +11,6 @@ export default function HowItWorks() {
   return (
     <div className="sheet field-guide">
       <div className="wash wash--tan" aria-hidden="true" />
-      <Announce />
       <header className="mast">
         <a href="/" className="guide-brand" aria-label="Chickadee home">
           <img className="mast__logo" src="/birds/head-right.webp" alt="" width="48" height="48" />
@@ -19,6 +18,7 @@ export default function HowItWorks() {
         </a>
         <span className="note">runs entirely on your machine</span>
       </header>
+      <Announce />
 
       <main>
         <article>

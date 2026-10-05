@@ -333,7 +333,6 @@ export default function Narrator({ sentences }) {
 
   return (
     <>
-      <Announce />
       <header className="mast">
         <img className="mast__logo" src="/birds/head-right.webp" alt="" width="48" height="48" />
         <span className="word">Chickadee</span>
@@ -367,6 +366,7 @@ export default function Narrator({ sentences }) {
         </a>
         </span>
       </header>
+      <Announce />
 
       <section className={`hero${rd}`} ref={secRef('hero')}>
         <div className="hero__copy">
