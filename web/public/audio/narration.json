@@ -1,10 +1,10 @@
 {
-  "total": 105.195,
+  "total": 116.56,
   "sentences": [
     {
       "zone": "hero",
       "text": "Any page,",
-      "start": 0,
+      "start": 0.0,
       "end": 1.115
     },
     {
@@ -75,129 +75,141 @@
     },
     {
       "zone": "body",
-      "text": "The voice downloads once, about three hundred and ten megabytes, and then it works offline.",
+      "text": "Kokoro downloads once, about three hundred and ten megabytes, and then it works offline.",
       "start": 37.79,
-      "end": 43.23
+      "end": 43.615
+    },
+    {
+      "zone": "body",
+      "text": "On computers without WebGPU, it uses Paradee, a much smaller model with nothing to download.",
+      "start": 43.615,
+      "end": 50.49
     },
     {
       "zone": "body",
       "text": "Install it, open any article, and press Alt plus R.",
-      "start": 43.23,
-      "end": 46.86
+      "start": 50.49,
+      "end": 54.12
     },
     {
       "zone": "showcase-h",
       "text": "It highlights the page you’re already on.",
-      "start": 46.86,
-      "end": 49.025
+      "start": 54.12,
+      "end": 56.285
     },
     {
       "zone": "showcase-p",
       "text": "The article itself, with the spoken sentence lit as it goes.",
-      "start": 49.025,
-      "end": 52.885
+      "start": 56.285,
+      "end": 60.145
     },
     {
       "zone": "proof-1h",
       "text": "Local and private",
-      "start": 52.885,
-      "end": 54.405
+      "start": 60.145,
+      "end": 61.665
     },
     {
       "zone": "proof-1p",
-      "text": "The model executes in your browser via WebGPU.",
-      "start": 54.405,
-      "end": 58.095
+      "text": "The model runs in your browser, on your own computer.",
+      "start": 61.665,
+      "end": 65.215
     },
     {
       "zone": "proof-1p",
       "text": "There is no server to send anything to, so there is nothing to leak.",
-      "start": 58.095,
-      "end": 61.93
+      "start": 65.215,
+      "end": 69.05
     },
     {
       "zone": "proof-2h",
       "text": "Reads the real page",
-      "start": 61.93,
-      "end": 63.52
+      "start": 69.05,
+      "end": 70.64
     },
     {
       "zone": "proof-2p",
       "text": "Sentences are highlighted on the page itself, right where you are reading.",
-      "start": 63.52,
-      "end": 67.84
+      "start": 70.64,
+      "end": 74.96
     },
     {
       "zone": "proof-2p",
       "text": "Right-click any word to start from there.",
-      "start": 67.84,
-      "end": 69.99
+      "start": 74.96,
+      "end": 77.11
     },
     {
       "zone": "proof-3h",
       "text": "Works offline",
-      "start": 69.99,
-      "end": 71.27
+      "start": 77.11,
+      "end": 78.39
     },
     {
       "zone": "proof-3p",
-      "text": "One ~310 MB voice download on first use.",
-      "start": 71.27,
-      "end": 75.58
+      "text": "Paradee works offline from the start.",
+      "start": 78.39,
+      "end": 81.015
+    },
+    {
+      "zone": "proof-3p",
+      "text": "Kokoro downloads once on first use, about 310 megabytes.",
+      "start": 81.015,
+      "end": 85.965
     },
     {
       "zone": "proof-3p",
       "text": "After that, it never touches the network again.",
-      "start": 75.58,
-      "end": 78.42
+      "start": 85.965,
+      "end": 88.805
     },
     {
       "zone": "proof-3p",
       "text": "You can use it on a plane, in a tunnel, or in the wilderness.",
-      "start": 78.42,
-      "end": 81.84
+      "start": 88.805,
+      "end": 92.225
     },
     {
       "zone": "proof-4h",
       "text": "Free forever",
-      "start": 81.84,
-      "end": 82.95
+      "start": 92.225,
+      "end": 93.335
     },
     {
       "zone": "proof-4p",
       "text": "Open source, with nothing to pay for — no subscription, no upsell.",
-      "start": 82.95,
-      "end": 87.2
+      "start": 93.335,
+      "end": 97.585
     },
     {
       "zone": "proof-4p",
       "text": "The voice is a small open model that lives in your browser, and always will.",
-      "start": 87.2,
-      "end": 91.78
+      "start": 97.585,
+      "end": 102.165
     },
     {
       "zone": "install-h",
       "text": "Install it and press ⌥ R",
-      "start": 91.78,
-      "end": 93.95
+      "start": 102.165,
+      "end": 104.335
     },
     {
       "zone": "install-req",
-      "text": "Chrome-based browsers · requires WebGPU",
-      "start": 93.95,
-      "end": 97.395
+      "text": "Chrome-based browsers · any computer",
+      "start": 104.335,
+      "end": 107.01
     },
     {
       "zone": "install-reqs",
-      "text": "Needs a WebGPU-capable browser and machine.",
-      "start": 97.395,
-      "end": 100.98
+      "text": "Kokoro needs a WebGPU-capable browser and machine.",
+      "start": 107.01,
+      "end": 110.91
     },
     {
       "zone": "install-reqs",
-      "text": "Chickadee checks on first run and tells you plainly if yours can’t run it.",
-      "start": 100.98,
-      "end": 105.195
+      "text": "Everywhere else, Chickadee uses Paradee, a lighter model that runs on any computer.",
+      "start": 110.91,
+      "end": 116.56
     }
   ]
 }
