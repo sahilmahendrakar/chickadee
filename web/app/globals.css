@@ -97,11 +97,8 @@ a{color:inherit}
 /* the one link in the masthead: typed small, like the meta line it replaced */
 .mast .nav{font-size:12.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink);
   line-height:1; padding:6px 0 5px; margin-right:-.14em;   /* the tracking leaves a gap after the last letter */
-  text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:6px;
-  text-decoration-color:rgba(42,39,36,.35);
-  pointer-events:auto; transition:color .2s, text-decoration-color .2s}
-.mast .nav:hover{color:var(--link); text-decoration-color:currentColor}
-.mast .nav[aria-current]{text-decoration-color:currentColor}
+  text-decoration:none; pointer-events:auto; transition:color .2s}
+.mast .nav:hover{color:var(--link)}
 /* the birdsong switch: a pencilled note in the margin, ink when the birds are singing */
 .birdsong{
   appearance:none; background:none; border:0; padding:6px; margin:-6px 0; cursor:pointer;
