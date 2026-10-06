@@ -338,7 +338,7 @@ export default function Narrator({ sentences }) {
         <span className="word">Chickadee</span>
         <span className="note">runs entirely on your machine</span>
         <span className="mast__right">
-        <span className="meta">Local · Open source · Free forever</span>
+        <a className="nav" href="/writing">Writing</a>
         <button type="button" className={`birdsong birdsong--${birdsong}`} onClick={toggleBirdsong}
                 aria-pressed={birdsong !== 'off'} aria-label={birdsongLabel} title={birdsongLabel}>
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
