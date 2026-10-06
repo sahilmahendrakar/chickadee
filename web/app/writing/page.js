@@ -13,6 +13,7 @@ const posts = [
     summary: 'What I learned shrinking Kokoro-82M into an 8M-parameter voice model that runs on a CPU.',
     date: '2026-10-05',
     label: 'October 5, 2026',
+    cover: '/paradee/img/cover-paper.png',
   },
   {
     href: '/how-it-works',
@@ -20,6 +21,7 @@ const posts = [
     summary: 'A few words about how Chickadee works, and what happens when you press play.',
     date: '2026-09-08',
     label: 'September 8, 2026',
+    cover: '/writing/introducing-chickadee.webp',
   },
 ];
 
@@ -46,9 +48,12 @@ export default function Writing() {
           {posts.map((post) => (
             <li key={post.href}>
               <a href={post.href}>
-                <time dateTime={post.date}>{post.label}</time>
-                <h2>{post.title}</h2>
-                <p>{post.summary}</p>
+                <div className="writing-text">
+                  <time dateTime={post.date}>{post.label}</time>
+                  <h2>{post.title}</h2>
+                  <p>{post.summary}</p>
+                </div>
+                <img className="writing-cover" src={post.cover} alt="" loading="lazy" />
               </a>
             </li>
           ))}
