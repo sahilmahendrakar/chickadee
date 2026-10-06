@@ -10,7 +10,7 @@ export default function Privacy() {
         <a href="/" className="word">Chickadee</a>
         <span className="note">runs entirely on your machine</span>
         <span className="mast__right">
-        <a className="nav" href="/writing">Writing</a>
+        <a className="nav" href="/blog">Blog</a>
         <a className="gh" href="https://github.com/sahilmahendrakar/chickadee" target="_blank" rel="noopener noreferrer"
            aria-label="Chickadee on GitHub" title="Source on GitHub">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">

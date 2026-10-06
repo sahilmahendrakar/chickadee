@@ -18,7 +18,7 @@ export default function HowItWorks() {
         </a>
         <span className="note">runs entirely on your machine</span>
         <span className="mast__right">
-          <a className="nav" href="/writing">Writing</a>
+          <a className="nav" href="/blog">Blog</a>
         </span>
       </header>
       <Announce />
@@ -100,7 +100,7 @@ export default function HowItWorks() {
       </main>
       <footer>
         <a href="/">Chickadee</a>
-        <a href="/writing">Writing</a>
+        <a href="/blog">Blog</a>
         <a href="/privacy">Privacy</a>
         <a href={source}>Source</a>
         <span className="credit">Any page, read aloud, locally.</span>
