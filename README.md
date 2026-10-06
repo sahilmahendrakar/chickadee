@@ -26,8 +26,7 @@ server, no account, no API key, and nothing to pay for. Nothing you read is ever
 ## How to use it
 
 1. Open an article and press **⌥R** (Alt+R), or click the Chickadee button in the toolbar.
-2. **⌥P** (Alt+P) pauses and resumes. The small bar at the bottom of the page also has previous, next, speed, and stop, and you can drag it anywhere.
-   Both shortcuts can be changed: click **Change shortcuts** in the popup, or open `chrome://extensions/shortcuts`.
+2. **⌥P** (Alt+P) pauses and resumes. The small bar at the bottom of the page also has previous, next, speed, and stop.
 3. Right-click a sentence and pick **Read aloud from here** to start partway through.
 4. Click the toolbar button to change the voice or the default speed. Your choice is remembered.
 

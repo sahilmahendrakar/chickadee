@@ -51,12 +51,9 @@ engine iframe fails as `chrome-extension://invalid/`.
 ## Controls
 - **Alt+R** — read the page from the top
 - **Alt+P** — play / pause
-- Both are `chrome.commands`, so they can be rebound at `chrome://extensions/shortcuts`.
-  The popup reads the live bindings with `chrome.commands.getAll()` and links there.
 - **Right-click any word -> "Read aloud from here"** — starts from that sentence,
   whether or not the reader is already running
-- Floating bar: prev, play/pause, next, speed, stop. Drag it by the grip (or its
-  background) to move it; the spot is remembered in `chrome.storage.local`.
+- Floating bar: prev, play/pause, next, speed, stop
 
 ## Things that were tried and reverted
 - **Per-word highlighting.** Kokoro emits no word timings, so words were spread across
