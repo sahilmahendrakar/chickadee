@@ -8,6 +8,14 @@ const source = 'https://github.com/sahilmahendrakar/chickadee';
 // Newest first.
 const posts = [
   {
+    href: '/paradee-1-1',
+    title: 'Paradee-8M-v1.1',
+    summary: 'A new decoder head makes Paradee three times faster and removes most of the buzz.',
+    date: '2026-10-19',
+    label: 'October 19, 2026',
+    cover: '/paradee-1-1/img/cover-paper.webp',
+  },
+  {
     href: '/paradee',
     title: 'Paradee: Distilling a voice model to one-tenth its size',
     summary: 'What I learned shrinking Kokoro-82M into an 8M-parameter voice model that runs on a CPU.',
