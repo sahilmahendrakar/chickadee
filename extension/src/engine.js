@@ -14,9 +14,10 @@ const MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX';
 const DTYPE = 'fp32';     // q8 on webgpu is numerically corrupt; wasm is sub-realtime
 const DEVICE = 'webgpu';
 
-// Paradee: an 8M-parameter single-voice model distilled from Kokoro (af_heart).
+// Paradee: an 8M-parameter model distilled from Kokoro, with four of its voices.
 // It ships inside the extension (8.5 MB, int8 weights) and runs on the CPU
-// (wasm), so it needs no WebGPU and no download.
+// (wasm), so it needs no WebGPU and no download. The model takes the voice as
+// its row in PARADEE_VOICES.
 const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
 const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable'];
 
@@ -35,10 +36,11 @@ async function loadParadee() {
   const tok = new PreTrainedTokenizer(tokenizerJSON, { model_max_length: 512, pad_token: '$', unk_token: '$' });
   const t = new KokoroTTS(null, (phonemes, opts) => tok(toMisaki(phonemes, t.british), opts));
   t.british = false;
-  t.generate_from_ids = async (ids) => {
+  t.generate_from_ids = async (ids, { voice: v = 'af_heart' } = {}) => {
     const { waveform } = await session.run({
       input_ids: new ort.Tensor('int64', ids.data, ids.dims),
       speed: new ort.Tensor('float32', new Float32Array([1]), [1]),
+      voice: new ort.Tensor('int64', BigInt64Array.from([BigInt(Math.max(0, PARADEE_VOICES.indexOf(v)))]), [1]),
     });
     return new RawAudio(waveform.data, 24000);
   };

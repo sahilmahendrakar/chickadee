@@ -13,12 +13,12 @@ for (const f of ['ort-wasm-simd-threaded.jsep.wasm', 'ort-wasm-simd-threaded.jse
   if (fs.existsSync(src)) fs.copyFileSync(src, path.join(VENDOR, f));
 }
 
-// Paradee (the small distilled model) ships inside the extension. Fetch the exact v1.1 file
+// Paradee (the small distilled model) ships inside the extension. Fetch the exact v1.2 file
 // from the Hugging Face Hub, pinned by its hash, so the extension always carries the
 // published model. A Hugging Face login (HF_TOKEN, or `hf auth login`) is only needed
 // while the model repo is private.
-const PARADEE_URL = 'https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.1/resolve/v1.1/onnx/paradee_int8.onnx';
-const PARADEE_SHA256 = '665c3cce6d9872e24bd43db4aa19d3b9c224cdeb6d79b0814190e1c2e43defbc';
+const PARADEE_URL = 'https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.2/resolve/v1.2/onnx/paradee_int8.onnx';
+const PARADEE_SHA256 = 'a6989796692ac173597e15d405c971989202d5c73cfad65f22e90bd7b6c97da1';
 const PARADEE_OUT = 'ext/paradee/paradee.onnx';
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 fs.mkdirSync('ext/paradee', { recursive: true });
@@ -29,9 +29,9 @@ if (!fs.existsSync(PARADEE_OUT) || sha256(fs.readFileSync(PARADEE_OUT)) !== PARA
   const res = await fetch(PARADEE_URL, { headers });
   if (!res.ok) throw new Error(`Paradee download failed: HTTP ${res.status} from ${PARADEE_URL}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  if (sha256(buf) !== PARADEE_SHA256) throw new Error('Paradee download does not match the pinned v1.1 hash');
+  if (sha256(buf) !== PARADEE_SHA256) throw new Error('Paradee download does not match the pinned v1.2 hash');
   fs.writeFileSync(PARADEE_OUT, buf);
-  console.log(`fetched Paradee v1.1 (${(buf.length / 1e6).toFixed(1)} MB)`);
+  console.log(`fetched Paradee v1.2 (${(buf.length / 1e6).toFixed(1)} MB)`);
 }
 
 // transformers.js and kokoro-js both carry Node-only code paths (fs, path,
