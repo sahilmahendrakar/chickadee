@@ -8,6 +8,14 @@ const source = 'https://github.com/sahilmahendrakar/chickadee';
 // Newest first.
 const posts = [
   {
+    href: '/paradee-1-2',
+    title: 'Paradee 1.2: Expanding to additional voices',
+    summary: 'Paradee now speaks four voices without growing in size or losing quality.',
+    date: '2026-10-28',
+    label: 'October 28, 2026',
+    cover: '/paradee-1-2/img/cover-paper.webp',
+  },
+  {
     href: '/paradee-1-1',
     title: 'Paradee-8M-v1.1',
     summary: 'A new decoder head makes Paradee three times faster and removes most of the buzz.',

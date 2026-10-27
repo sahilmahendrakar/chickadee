@@ -269,6 +269,8 @@
 .pd-table .pd-table-us { color: var(--pd-ink); }
 .pd-table thead .pd-table-us { color: var(--pd-ink); }
 .pd-table td.pd-table-us { font-size: 1.08em; }
+.pd-table-text th,
+.pd-table-text td { text-align: left; }
 
 /* ---------- figures ---------- */
 .pd .pd-figure { margin: 2em 0; }
