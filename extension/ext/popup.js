@@ -9,16 +9,18 @@ async function hasWebGPU() {
 }
 
 // Paradee is a small model distilled from Kokoro. It has four of Kokoro's voices,
-// ships inside the extension, and runs without WebGPU. With Paradee the other
-// voices are greyed out, and a stored voice it doesn't have shows as af_heart,
-// which is what the engine reads with.
+// ships inside the extension, and runs without WebGPU. With Paradee the menu lists
+// only those four, and a stored voice it doesn't have shows as af_heart, which is
+// what the engine reads with.
 const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable'];
+const ALL_VOICES = $('voice').cloneNode(true);   // the full Kokoro menu from popup.html
 let storedVoice = DEFAULTS.voice;
 function showEngine() {
   const light = $('engine').value === 'paradee';
-  for (const o of $('voice').options) o.disabled = light && !PARADEE_VOICES.includes(o.value);
+  const menu = ALL_VOICES.cloneNode(true);
+  if (light) for (const o of [...menu.querySelectorAll('option')]) if (!PARADEE_VOICES.includes(o.value)) o.remove();
+  $('voice').replaceChildren(...menu.childNodes);
   $('voice').value = light && !PARADEE_VOICES.includes(storedVoice) ? 'af_heart' : storedVoice;
-  $('voice-field').title = light ? 'Paradee has four voices: af_heart, bf_isabella, am_puck and bm_fable' : '';
   $('size-note').textContent = light
     ? 'Small and fast. Works on any computer, no download.'
     : 'Most natural voice. Downloads 310 MB once, then works offline.';
