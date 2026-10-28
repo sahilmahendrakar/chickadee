@@ -47,7 +47,7 @@ Chickadee reads any web page aloud in a natural, human-sounding voice, and it do
 
 Open an article and press Alt+R, or click the Chickadee button, and it starts reading from the top, highlighting each sentence on the page itself as it goes. Right-click any sentence and choose "Read aloud from here" to start partway through. A small floating bar lets you pause, step back and forth between sentences, and change the speed from 0.9x to 2x. Alt+P plays and pauses. Both shortcuts can be changed from the popup if you'd rather use other keys.
 
-Most read-aloud tools send your page text to a server to generate the speech. Chickadee runs the speech model directly in your browser, so the words never leave your machine. On computers with WebGPU it uses Kokoro, with twelve voices to choose from, American and British. On computers without it, Chickadee uses Paradee, a small voice built into the extension, so it works on any computer.
+Most read-aloud tools send your page text to a server to generate the speech. Chickadee runs the speech model directly in your browser, so the words never leave your machine. On computers with WebGPU it uses Kokoro, with twelve voices to choose from, American and British. On computers without it, Chickadee uses Paradee, a small model built into the extension with four voices, two American and two British, so it works on any computer.
 
 With Kokoro, Chickadee downloads the voice model once on first use (about 310 MB) and then works offline: on a plane, in a tunnel, anywhere. Paradee needs no download at all.
 

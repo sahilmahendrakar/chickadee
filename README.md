@@ -17,10 +17,10 @@ server, no account, no API key, and nothing to pay for. Nothing you read is ever
 
 ## What it does
 
-- **Reads any article aloud** in one of twelve voices, at a speed you choose.
+- **Reads any article aloud** in one of twelve Kokoro voices, or four with Paradee, at a speed you choose.
 - **Highlights each sentence on the real page** as it's spoken, not in a separate reader view.
 - **Starts wherever you like.** Right-click any word and choose "Read aloud from here".
-- **Works offline.** The voice downloads once (about 310 MB) and then never touches the network again.
+- **Works offline.** Kokoro downloads once (about 310 MB) and then never touches the network again. Paradee ships inside the extension, so it needs no download.
 - **Keeps your reading private.** The page never leaves your machine, because there's nowhere for it to go.
 
 ## How to use it
@@ -37,9 +37,10 @@ starts in a couple of seconds.
 ## What you need
 
 - A **Chrome-based browser** (Chrome, Edge, Arc, Brave, and friends) version 113 or newer.
-- A computer whose browser can use the graphics card through **WebGPU**. Any Apple Silicon Mac
-  or a laptop with recent integrated graphics is comfortably enough. Chickadee checks on first
-  run and tells you plainly if your machine can't do it.
+- For Kokoro, a computer whose browser can use the graphics card through **WebGPU**. Any Apple
+  Silicon Mac or a laptop with recent integrated graphics is comfortably enough. Without WebGPU,
+  Chickadee uses [Paradee](https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.2), a small model
+  distilled from Kokoro with four voices, two American and two British, that runs on any computer.
 
 ## Why it's different
 
@@ -72,8 +73,8 @@ vectors indexed by sentence length, so delivery adapts to how long a sentence is
 sentences generate while the current one plays, so playback never waits.
 
 Kokoro runs in full precision on the GPU only. The 8-bit build produces corrupt audio on WebGPU
-and every CPU-only configuration generates slower than it plays, so the extension requires
-WebGPU rather than falling back to something worse.
+and every CPU-only configuration generates slower than it plays. Without WebGPU, the extension
+uses Paradee instead, an 8M-parameter model distilled from Kokoro that runs fast on the CPU.
 
 ## Developing
 
