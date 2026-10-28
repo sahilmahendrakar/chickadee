@@ -8,12 +8,19 @@ async function hasWebGPU() {
   catch (e) { return false; }
 }
 
-// Paradee is a small model distilled from Kokoro's af_heart voice. It has that
-// one voice, ships inside the extension, and runs without WebGPU.
+// Paradee is a small model distilled from Kokoro. It has four of Kokoro's voices,
+// ships inside the extension, and runs without WebGPU. With Paradee the menu lists
+// only those four, and a stored voice it doesn't have shows as af_heart, which is
+// what the engine reads with.
+const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable'];
+const ALL_VOICES = $('voice').cloneNode(true);   // the full Kokoro menu from popup.html
+let storedVoice = DEFAULTS.voice;
 function showEngine() {
   const light = $('engine').value === 'paradee';
-  $('voice').disabled = light;
-  $('voice-field').title = light ? 'Paradee has one voice, distilled from af_heart' : '';
+  const menu = ALL_VOICES.cloneNode(true);
+  if (light) for (const o of [...menu.querySelectorAll('option')]) if (!PARADEE_VOICES.includes(o.value)) o.remove();
+  $('voice').replaceChildren(...menu.childNodes);
+  $('voice').value = light && !PARADEE_VOICES.includes(storedVoice) ? 'af_heart' : storedVoice;
   $('size-note').textContent = light
     ? 'Small and fast. Works on any computer, no download.'
     : 'Most natural voice. Downloads 310 MB once, then works offline.';
@@ -27,14 +34,16 @@ chrome.storage.sync.get(DEFAULTS, async (s) => {
     k.textContent = 'Kokoro — needs WebGPU';
   }
   $('engine').value = gpu && s.engine !== 'paradee' ? 'kokoro' : 'paradee';
-  $('voice').value = s.voice;
+  storedVoice = s.voice;
   $('speed').value = String(s.speed);
   showEngine();
 });
 
 function save(ev) {
+  // The voice is stored only when it is picked, so trying Paradee doesn't replace a Kokoro-only voice.
+  if (ev && ev.target === $('voice')) storedVoice = $('voice').value;
   showEngine();
-  const v = { voice: $('voice').value, speed: parseFloat($('speed').value) };
+  const v = { voice: storedVoice, speed: parseFloat($('speed').value) };
   // Only an actual pick in the Model menu is stored, so the automatic default
   // keeps following the computer until the user chooses.
   if (ev && ev.target === $('engine')) v.engine = $('engine').value;

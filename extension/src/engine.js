@@ -14,10 +14,12 @@ const MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX';
 const DTYPE = 'fp32';     // q8 on webgpu is numerically corrupt; wasm is sub-realtime
 const DEVICE = 'webgpu';
 
-// Paradee: an 8M-parameter single-voice model distilled from Kokoro (af_heart).
-// It ships inside the extension (9 MB, int8 weights) and runs on the CPU
-// (wasm), so it needs no WebGPU and no download.
+// Paradee: an 8M-parameter model distilled from Kokoro, with four of its voices.
+// It ships inside the extension (8.5 MB, int8 weights) and runs on the CPU
+// (wasm), so it needs no WebGPU and no download. The model takes the voice as
+// its row in PARADEE_VOICES.
 const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
+const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable'];
 
 let models = {}, tts = null, engine = 'kokoro', gen = 0, sentences = [], cache = new Map();
 let current = 0, stopped = false, voice = 'af_heart', speed = 1.0;
@@ -26,15 +28,19 @@ let audio;
 const emit = (msg) => parent.postMessage(msg, '*');
 
 // Reuses kokoro-js for text -> phonemes -> token ids and swaps in Paradee for
-// the model call. Paradee has one voice, so the voice setting does not apply.
+// the model call. kokoro-js picks British eSpeak for a bf_/bm_ voice and American
+// for the rest; t.british tells toMisaki which of the two it got. It is set just
+// before each generate, and runs never overlap (see runQueue).
 async function loadParadee() {
   const session = await ort.InferenceSession.create(PARADEE_URL, { executionProviders: ['wasm'] });
   const tok = new PreTrainedTokenizer(tokenizerJSON, { model_max_length: 512, pad_token: '$', unk_token: '$' });
-  const t = new KokoroTTS(null, (phonemes, opts) => tok(toMisaki(phonemes), opts));
-  t.generate_from_ids = async (ids) => {
+  const t = new KokoroTTS(null, (phonemes, opts) => tok(toMisaki(phonemes, t.british), opts));
+  t.british = false;
+  t.generate_from_ids = async (ids, { voice: v = 'af_heart' } = {}) => {
     const { waveform } = await session.run({
       input_ids: new ort.Tensor('int64', ids.data, ids.dims),
       speed: new ort.Tensor('float32', new Float32Array([1]), [1]),
+      voice: new ort.Tensor('int64', BigInt64Array.from([BigInt(Math.max(0, PARADEE_VOICES.indexOf(v)))]), [1]),
     });
     return new RawAudio(waveform.data, 24000);
   };
@@ -46,9 +52,11 @@ async function loadParadee() {
 // happens when the model is switched with the old model's prefetch still going.
 let runQueue = Promise.resolve();
 async function synth(i) {
-  const g = gen, model = tts, v = engine === 'paradee' ? 'af_heart' : voice;
+  const g = gen, model = tts;
+  const v = engine === 'paradee' && !PARADEE_VOICES.includes(voice) ? 'af_heart' : voice;
   const run = runQueue.then(() => {
     if (g !== gen) throw new Error('stale');   // the model was switched while this waited
+    if (engine === 'paradee') model.british = v.startsWith('b');
     // Raw model output, untouched. Trimming/normalising the leading and trailing
     // silence was tried and reverted: it made sentence starts and ends sound wrong.
     return model.generate(sentences[i], { voice: v, speed: 1.0 });
@@ -156,7 +164,7 @@ async function switchModel(d) {
   const want = await pickEngine(d.engine);
   const voiceChanged = !!d.voice && d.voice !== voice;
   voice = d.voice || voice;
-  if (want === engine && !(voiceChanged && engine === 'kokoro')) return;
+  if (want === engine && !voiceChanged) return;
   const resume = !audio.paused;
   audio.pause();
   gen++; cache.clear();
