@@ -62,4 +62,17 @@ await esbuild.build({
   logLevel: 'warning',
   legalComments: 'none'
 });
-console.log('built ext/engine.bundle.js');
+// Paradee runs in a worker of its own (src/paradee-worker.js).
+await esbuild.build({
+  entryPoints: ['src/paradee-worker.js'],
+  bundle: true,
+  format: 'iife',
+  platform: 'browser',
+  target: 'chrome120',
+  minify: true,
+  outfile: 'ext/paradee-worker.bundle.js',
+  plugins: [stubNodeBuiltins],
+  logLevel: 'warning',
+  legalComments: 'none'
+});
+console.log('built ext/engine.bundle.js and ext/paradee-worker.bundle.js');
