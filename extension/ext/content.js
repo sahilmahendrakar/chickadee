@@ -9,6 +9,7 @@
   const SKIP = new Set(['SCRIPT','STYLE','NOSCRIPT','NAV','HEADER','FOOTER','ASIDE',
                         'FORM','BUTTON','SELECT','TEXTAREA','CODE','PRE','SVG']);
   const HL_SENT = 'kokoro-sentence';
+  const HL_WORD = 'kokoro-word';
   let sentences = [];      // [{ text, range, block }]
   let onReadyCb = null;
   let frame = null, bar = null, playing = false, curIdx = -1;
@@ -71,14 +72,21 @@
     const push = (from, to) => {
       const text = full.slice(from, to).trim();
       if (text.length < 2) return;
-      const a = locate(from + (full.slice(from, to).match(/^\s*/) || [''])[0].length);
+      const base = from + (full.slice(from, to).match(/^\s*/) || [''])[0].length;
+      const a = locate(base);
       const b = locate(Math.max(from, to - 1));
       const r = document.createRange();
       try {
         r.setStart(a.node, Math.min(a.offset, a.node.nodeValue.length));
         r.setEnd(b.node, Math.min(b.offset + 1, b.node.nodeValue.length));
       } catch (e) { return; }
-      out.push({ text, range: r });
+      // wordRange(from, to): a Range over characters from..to of this sentence's text
+      out.push({ text, range: r, wordRange: (f, t) => {
+        const x = locate(base + f), y = locate(base + t - 1), w = document.createRange();
+        w.setStart(x.node, Math.min(x.offset, x.node.nodeValue.length));
+        w.setEnd(y.node, Math.min(y.offset + 1, y.node.nodeValue.length));
+        return w;
+      } });
     };
     const re = /[.!?]["')\]]?(\s|$)/g;
     let m;
@@ -128,13 +136,16 @@
     // Contrast: 12.2:1 light, 6.5:1 dark — both well past WCAG AA.
     const bg = dark ? '#2f5f9e' : '#cfe4ff';
     const fg = dark ? '#ffffff' : '#0b2340';
+    // The word being spoken, a deeper shade of the same blue.
+    const wordBg = dark ? '#0f3a73' : '#94c4ff';
     const prev = document.getElementById('kokoro-hl-style');
     if (prev && prev.dataset.dark === String(dark)) return;
     if (prev) prev.remove();
     const st = document.createElement('style');
     st.id = 'kokoro-hl-style';
     st.dataset.dark = String(dark);
-    st.textContent = `::highlight(${HL_SENT}) { background-color: ${bg}; color: ${fg}; }`;
+    st.textContent = `::highlight(${HL_SENT}) { background-color: ${bg}; color: ${fg}; }\n` +
+      `::highlight(${HL_WORD}) { background-color: ${wordBg}; color: ${fg}; }`;
     document.documentElement.appendChild(st);
   }
   function paint(i) {
@@ -142,13 +153,24 @@
     const s = sentences[i];
     if (!s) return;
     CSS.highlights.set(HL_SENT, new Highlight(s.range));
+    CSS.highlights.delete(HL_WORD);
     const rect = s.range.getBoundingClientRect();
     if (rect.height && (rect.top < 60 || rect.bottom > innerHeight - 60)) {
       const y = scrollY + rect.top - innerHeight / 2 + rect.height / 2;
       scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
     }
   }
-  function clearPaint() { if (window.CSS && CSS.highlights) CSS.highlights.delete(HL_SENT); }
+  function paintWord(i, from, to) {
+    if (!window.CSS || !CSS.highlights) return;
+    const s = sentences[i];
+    if (!s || i !== curIdx || from < 0) { CSS.highlights.delete(HL_WORD); return; }
+    let r;
+    try { r = s.wordRange(from, to); } catch (e) { return; }
+    const h = new Highlight(r);
+    h.priority = 1;   // drawn over the sentence
+    CSS.highlights.set(HL_WORD, h);
+  }
+  function clearPaint() { if (window.CSS && CSS.highlights) { CSS.highlights.delete(HL_SENT); CSS.highlights.delete(HL_WORD); } }
 
   /* ---------- floating control bar ---------- */
   function mkBtn(label, title, fn) {
@@ -362,6 +384,7 @@
         // reach here (they short-circuit before a sentence starts), so they persist.
         setStatus('');
         break;
+      case 'KL_WORD': paintWord(d.i, d.from, d.to); break;
       case 'KL_STATUS': {
         // Show only the first-run download and real failures; ignore chatter.
         const t = d.text || '';

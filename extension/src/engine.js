@@ -3,9 +3,9 @@
 // element; the content script owns all visible UI and on-page highlighting.
 import { KokoroTTS } from 'kokoro-js';
 import { env, PreTrainedTokenizer, RawAudio } from '@huggingface/transformers';
-import * as ort from 'onnxruntime-web';
 import tokenizerJSON from './paradee-tokenizer.json';
 import { toMisaki } from './misaki.js';
+import { wordTimes, textWords, phonemeWords } from './wordtimes.js';
 
 env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('vendor/');
 env.allowLocalModels = false;
@@ -27,24 +27,85 @@ let audio;
 
 const emit = (msg) => parent.postMessage(msg, '*');
 
+// The word being spoken, sent to the page whenever it changes. Only Paradee
+// reports durations, so with Kokoro the sentence alone is highlighted.
+let playing = { i: -1, words: [] }, word = -1;
+function tick() {
+  const t = audio.currentTime, ws = playing.words;
+  let k = -1;
+  if (!audio.paused || audio.currentTime > 0)
+    for (let j = 0; j < ws.length; j++) if (t >= ws[j].start && t < ws[j].end) { k = j; break; }
+  if (k === word) return;
+  word = k;
+  emit(k < 0 ? { type: 'KL_WORD', i: playing.i, from: -1 } : { type: 'KL_WORD', i: playing.i, from: ws[k].from, to: ws[k].to });
+}
+
 // Reuses kokoro-js for text -> phonemes -> token ids and swaps in Paradee for
 // the model call. kokoro-js picks British eSpeak for a bf_/bm_ voice and American
 // for the rest; t.british tells toMisaki which of the two it got. It is set just
 // before each generate, and runs never overlap (see runQueue).
+//
+// The model also says how long each phoneme lasts (see wordtimes.js), which is
+// how the reader knows the word being spoken. t.phonemes and t.durations hold
+// the last run's phonemes, one per token id, and their frames.
+const KEEP = new RegExp(tokenizerJSON.normalizer.pattern.Regex, 'gu');   // what the tokenizer drops
+// The model itself runs in a worker (paradee-worker.js).
+function paradeeWorker() {
+  const w = new Worker(chrome.runtime.getURL('paradee-worker.bundle.js'));
+  const waiting = new Map();
+  let next = 0;
+  w.onmessage = ({ data }) => {
+    const p = waiting.get(data.id);
+    waiting.delete(data.id);
+    if (p) data.error ? p.reject(new Error(data.error)) : p.resolve(data);
+  };
+  return (msg) => new Promise((resolve, reject) => {
+    const id = next++;
+    waiting.set(id, { resolve, reject });
+    w.postMessage({ ...msg, id });
+  });
+}
 async function loadParadee() {
-  const session = await ort.InferenceSession.create(PARADEE_URL, { executionProviders: ['wasm'] });
+  const call = paradeeWorker();
+  await call({ type: 'load', url: PARADEE_URL, wasmPaths: chrome.runtime.getURL('vendor/') });
   const tok = new PreTrainedTokenizer(tokenizerJSON, { model_max_length: 512, pad_token: '$', unk_token: '$' });
-  const t = new KokoroTTS(null, (phonemes, opts) => tok(toMisaki(phonemes, t.british), opts));
+  const t = new KokoroTTS(null, (phonemes, opts) => {
+    const ps = toMisaki(phonemes, t.british);
+    t.phonemes = ps.replace(KEEP, '');
+    return tok(ps, opts);
+  });
   t.british = false;
   t.generate_from_ids = async (ids, { voice: v = 'af_heart' } = {}) => {
-    const { waveform } = await session.run({
-      input_ids: new ort.Tensor('int64', ids.data, ids.dims),
-      speed: new ort.Tensor('float32', new Float32Array([1]), [1]),
-      voice: new ort.Tensor('int64', BigInt64Array.from([BigInt(Math.max(0, PARADEE_VOICES.indexOf(v)))]), [1]),
-    });
-    return new RawAudio(waveform.data, 24000);
+    const out = await call({ type: 'run', ids: BigInt64Array.from(ids.data), voice: Math.max(0, PARADEE_VOICES.indexOf(v)) });
+    t.durations = out.durations;
+    t.phonemes = t.phonemes.slice(0, Math.max(0, t.durations.length - 2));   // the tokenizer cuts at 512 ids
+    return new RawAudio(out.waveform, 24000);
   };
+  // The phonemes kokoro-js would make for a piece of text, without running the model.
+  let caught = '';
+  const g2p = new KokoroTTS(null, (phonemes) => { caught = toMisaki(phonemes, t.british).replace(KEEP, ''); return { input_ids: null }; });
+  g2p.generate_from_ids = async () => null;
+  t.g2p = async (text, v) => { await g2p.generate(text, { voice: v }); return caught; };
   return t;
+}
+
+// Where each word of sentence `text` is spoken: [{ from, to, start, end }], with
+// from/to the word's characters in `text` and start/end in seconds of its audio.
+async function timeWords(model, text, v) {
+  const words = textWords(text), ps = model.phonemes, durations = model.durations;
+  if (!words.length || !ps) return [];
+  let counts = words.map(() => 1), lens = counts;
+  if (phonemeWords(ps).length !== words.length) {
+    // A word can be read as several (a number, "U.S.A.") or merged with the next,
+    // so phonemize each word on its own to see how much of the sentence it takes.
+    counts = []; lens = [];
+    for (const w of words) {
+      const own = phonemeWords(await model.g2p(w.text, v));
+      counts.push(own.length); lens.push(own.reduce((a, p) => a + p.len, 0));
+    }
+  }
+  const times = wordTimes(ps, durations, counts, lens);
+  return words.map((w, k) => ({ from: w.from, to: w.to, start: times[k][0], end: times[k][1] }));
 }
 
 // One generation at a time, across both models. onnxruntime-web refuses a run
@@ -59,11 +120,12 @@ async function synth(i) {
     if (engine === 'paradee') model.british = v.startsWith('b');
     // Raw model output, untouched. Trimming/normalising the leading and trailing
     // silence was tried and reverted: it made sentence starts and ends sound wrong.
-    return model.generate(sentences[i], { voice: v, speed: 1.0 });
+    return model.generate(sentences[i], { voice: v, speed: 1.0 }).then(async (raw) =>
+      ({ raw, words: engine === 'paradee' ? await timeWords(model, sentences[i], v).catch(() => []) : [] }));
   });
   runQueue = run.catch(() => {});
-  const raw = await run;
-  return URL.createObjectURL(raw.toBlob());
+  const { raw, words } = await run;
+  return { url: URL.createObjectURL(raw.toBlob()), words };
 }
 function getAudio(i) {
   if (i < 0 || i >= sentences.length) return null;
@@ -81,12 +143,13 @@ async function play(i, resume = true) {
   current = i;
   const g = gen;
   emit({ type: 'KL_SENTENCE', i, total: sentences.length });
-  let url;
-  try { url = await getAudio(i); }
+  let url, words;
+  try { ({ url, words } = await getAudio(i)); }
   catch (e) { if (g === gen) emit({ type: 'KL_STATUS', text: 'Generation failed: ' + (e.message || e) }); return; }
   if (stopped || current !== i || g !== gen) return;
   audio.src = url;
   audio.playbackRate = speed;
+  playing = { i, words }; word = -1;
   if (!resume) { prefetch(i); return; }
   try { await audio.play(); }
   catch (e) { if (e.name === 'NotAllowedError') emit({ type: 'KL_BLOCKED' }); }
@@ -185,7 +248,9 @@ async function init(payload) {
 
 document.addEventListener('DOMContentLoaded', () => {
   audio = document.getElementById('audio');
-  audio.addEventListener('ended', () => { if (!stopped) play(current + 1); });
+  audio.addEventListener('ended', () => { word = -1; emit({ type: 'KL_WORD', i: playing.i, from: -1 }); if (!stopped) play(current + 1); });
+  setInterval(() => { if (!audio.paused) tick(); }, 20);
+  audio.addEventListener('seeked', tick);
   audio.addEventListener('play',  () => emit({ type: 'KL_PLAYING', playing: true }));
   audio.addEventListener('pause', () => { if (!audio.ended) emit({ type: 'KL_PLAYING', playing: false }); });
 

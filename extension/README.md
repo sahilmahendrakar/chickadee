@@ -12,6 +12,12 @@ Load unpacked from `ext/` at `chrome://extensions` (Developer mode).
   control bar.
 - **`ext/engine.html` + `engine.bundle.js`** — a hidden iframe holding the model and the
   `<audio>` element. Extension page, so it gets the bundled ONNX runtime and WebGPU.
+- **Word highlighting (Paradee only)** — Paradee works out how long each phoneme lasts
+  before it makes any sound. `src/wordtimes.js` adds that tensor as a graph output when
+  the model loads and turns it into a start and end time for each word of the sentence,
+  and the engine tells the page which word is being spoken. The model runs in a worker
+  (`src/paradee-worker.js`) so making the next sentence never freezes the highlight.
+  Kokoro (via kokoro-js) gives no durations, so with Kokoro only the sentence is lit.
 - **`ext/background.js`** — routes the Alt+R / Alt+P commands and the toolbar click.
 - Sentence N+1 and N+2 generate while N plays (prefetch), so playback never waits.
 
