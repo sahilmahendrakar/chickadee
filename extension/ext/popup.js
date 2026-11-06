@@ -11,23 +11,34 @@ async function hasWebGPU() {
 
 // Paradee is a small model distilled from Kokoro. It has eight of Kokoro's voices,
 // in English, Hindi, French and Spanish, ships inside the extension, and runs
-// without WebGPU. With Paradee the menu lists only those eight. Kokoro here reads
-// English only, so its menu leaves out the other languages. A stored voice the
+// without WebGPU. Kokoro here reads English only, so with Kokoro the Language menu
+// is set to English and disabled. The Voice menu lists the chosen model's voices
+// in the chosen language. The language isn't stored on its own: it is the stored
+// voice's, from the first letter of its name as in Kokoro. A stored voice the
 // chosen model doesn't have shows as af_heart, which is what the engine reads with.
 const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable', 'hf_alpha', 'hm_omega', 'ff_siwis', 'em_alex'];
-const ENGLISH = (v) => v[0] === 'a' || v[0] === 'b';
+const LANG_OF = { a: 'en', b: 'en', h: 'hi', f: 'fr', e: 'es' };
+const langOf = (v) => LANG_OF[v[0]] || 'en';
+const FIRST_VOICE = { en: 'af_heart', hi: 'hf_alpha', fr: 'ff_siwis', es: 'em_alex' };
 const ALL_VOICES = $('voice').cloneNode(true);   // the full menu from popup.html
 let storedVoice = DEFAULTS.voice;
 function showEngine() {
   const light = $('engine').value === 'paradee';
-  const has = (v) => light ? PARADEE_VOICES.includes(v) : ENGLISH(v);
+  const has = (v) => light ? PARADEE_VOICES.includes(v) : langOf(v) === 'en';
+  const voice = has(storedVoice) ? storedVoice : 'af_heart';
+  const lang = langOf(voice);
+  $('lang').value = lang;
+  $('lang').disabled = !light;
   const menu = ALL_VOICES.cloneNode(true);
-  for (const o of [...menu.querySelectorAll('option')]) if (!has(o.value)) o.remove();
-  for (const g of [...menu.querySelectorAll('optgroup')]) if (!g.children.length) g.remove();
+  for (const o of [...menu.querySelectorAll('option')]) if (!has(o.value) || langOf(o.value) !== lang) o.remove();
+  for (const g of [...menu.querySelectorAll('optgroup')]) {
+    if (!g.children.length) g.remove();
+    else if (lang !== 'en') g.replaceWith(...g.children);   // one language: no group label
+  }
   $('voice').replaceChildren(...menu.childNodes);
-  $('voice').value = has(storedVoice) ? storedVoice : 'af_heart';
+  $('voice').value = voice;
   $('size-note').textContent = light
-    ? 'Small and fast, in English, Hindi, French and Spanish. Works on any computer, no download.'
+    ? 'Small and fast. Works on any computer, no download.'
     : 'Most natural voice, in English. Downloads 310 MB once, then works offline.';
 }
 
@@ -47,6 +58,8 @@ chrome.storage.sync.get(DEFAULTS, async (s) => {
 function save(ev) {
   // The voice is stored only when it is picked, so trying Paradee doesn't replace a Kokoro-only voice.
   if (ev && ev.target === $('voice')) storedVoice = $('voice').value;
+  // A new language starts with that language's first voice.
+  if (ev && ev.target === $('lang') && langOf(storedVoice) !== $('lang').value) storedVoice = FIRST_VOICE[$('lang').value];
   showEngine();
   const v = { voice: storedVoice, speed: parseFloat($('speed').value) };
   // Only an actual pick in the Model menu is stored, so the automatic default
@@ -55,6 +68,7 @@ function save(ev) {
   chrome.storage.sync.set(v);
 }
 $('engine').onchange = save;
+$('lang').onchange = save;
 $('voice').onchange = save;
 $('speed').onchange = save;
 
