@@ -18,6 +18,13 @@ Load unpacked from `ext/` at `chrome://extensions` (Developer mode).
   and the engine tells the page which word is being spoken. The model runs in a worker
   (`src/paradee-worker.js`) so making the next sentence never freezes the highlight.
   Kokoro (via kokoro-js) gives no durations, so with Kokoro only the sentence is lit.
+- **Hindi, French and Spanish (Paradee only)** — Paradee 1.3 was trained on eSpeak's
+  phonemes in each voice's own language, so `src/espeak-g2p.js` asks eSpeak for that
+  language and maps its output the way training did (misaki's EspeakG2P). The phonemizer
+  package carries only eSpeak's English dictionary, so the Hindi, French and Spanish ones
+  (eSpeak NG 1.52, the version training used) ship in `ext/espeak/`, and build.mjs patches
+  the phonemizer to accept those languages. On 200 training sentences per language the
+  browser's phonemes match training exactly on 200 Hindi, 198 French and 199 Spanish.
 - **`ext/background.js`** — routes the Alt+R / Alt+P commands and the toolbar click.
 - Sentence N+1 and N+2 generate while N plays (prefetch), so playback never waits.
 

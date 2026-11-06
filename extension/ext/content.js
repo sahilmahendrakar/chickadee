@@ -67,6 +67,10 @@
     };
 
     const ABBR = /\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e|al|Inc|Ltd|Co|Fig|No|pp)\.$/i;
+    // French and Spanish titles (M. Dupont, Mme, Sra., Ud.), capitalised only
+    const TITLE = /\b(M|Mme|Mlle|Sra|Srta|Dra|Ud|Uds)\.$/;
+    // An initial, as in "J. R. R. Tolkien" or Hindi "सी. पी.": one letter (with its vowel sign) and a full stop
+    const INITIAL = /(^|\s)\p{L}\p{M}*\.$/u;
     const out = [];
     let start = 0;
     const push = (from, to) => {
@@ -88,11 +92,15 @@
         return w;
       } });
     };
-    const re = /[.!?]["')\]]?(\s|$)/g;
+    // A sentence ends at . ! ? (with any closing quote or bracket) before a space,
+    // or at Hindi's danda "।" / "॥", which pages often write with no space after.
+    // Spanish "¿ ¡" open a sentence, so they need nothing here.
+    const re = /[.!?]["'’”»)\]]?(\s|$)|[।॥]["'’”»)\]]?\s*/g;
     let m;
     while ((m = re.exec(full))) {
       const end = m.index + m[0].length;
-      if (ABBR.test(full.slice(start, m.index + 1))) continue;
+      const upto = full.slice(start, m.index + 1);
+      if (ABBR.test(upto) || TITLE.test(upto) || INITIAL.test(upto)) continue;
       if (end - start > 3) { push(start, end); start = end; }
     }
     if (full.length - start > 3) push(start, full.length);

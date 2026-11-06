@@ -17,7 +17,7 @@ server, no account, no API key, and nothing to pay for. Nothing you read is ever
 
 ## What it does
 
-- **Reads any article aloud** in one of twelve Kokoro voices, or four with Paradee, at a speed you choose.
+- **Reads any article aloud** in one of twelve Kokoro voices, or eight with Paradee in English, Hindi, French and Spanish, at a speed you choose.
 - **Highlights each sentence on the real page** as it's spoken, not in a separate reader view.
 - **Starts wherever you like.** Right-click any word and choose "Read aloud from here".
 - **Works offline.** Kokoro downloads once (about 310 MB) and then never touches the network again. Paradee ships inside the extension, so it needs no download.
@@ -39,8 +39,9 @@ starts in a couple of seconds.
 - A **Chrome-based browser** (Chrome, Edge, Arc, Brave, and friends) version 113 or newer.
 - For Kokoro, a computer whose browser can use the graphics card through **WebGPU**. Any Apple
   Silicon Mac or a laptop with recent integrated graphics is comfortably enough. Without WebGPU,
-  Chickadee uses [Paradee](https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.2), a small model
-  distilled from Kokoro with four voices, two American and two British, that runs on any computer.
+  Chickadee uses [Paradee](https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.3), a small model
+  distilled from Kokoro that runs on any computer. It has eight voices: two American, two British,
+  two Hindi, one French and one Spanish.
 
 ## Why it's different
 

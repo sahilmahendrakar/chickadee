@@ -8,22 +8,26 @@ async function hasWebGPU() {
   catch (e) { return false; }
 }
 
-// Paradee is a small model distilled from Kokoro. It has four of Kokoro's voices,
-// ships inside the extension, and runs without WebGPU. With Paradee the menu lists
-// only those four, and a stored voice it doesn't have shows as af_heart, which is
-// what the engine reads with.
-const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable'];
-const ALL_VOICES = $('voice').cloneNode(true);   // the full Kokoro menu from popup.html
+// Paradee is a small model distilled from Kokoro. It has eight of Kokoro's voices,
+// in English, Hindi, French and Spanish, ships inside the extension, and runs
+// without WebGPU. With Paradee the menu lists only those eight. Kokoro here reads
+// English only, so its menu leaves out the other languages. A stored voice the
+// chosen model doesn't have shows as af_heart, which is what the engine reads with.
+const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable', 'hf_alpha', 'hm_omega', 'ff_siwis', 'em_alex'];
+const ENGLISH = (v) => v[0] === 'a' || v[0] === 'b';
+const ALL_VOICES = $('voice').cloneNode(true);   // the full menu from popup.html
 let storedVoice = DEFAULTS.voice;
 function showEngine() {
   const light = $('engine').value === 'paradee';
+  const has = (v) => light ? PARADEE_VOICES.includes(v) : ENGLISH(v);
   const menu = ALL_VOICES.cloneNode(true);
-  if (light) for (const o of [...menu.querySelectorAll('option')]) if (!PARADEE_VOICES.includes(o.value)) o.remove();
+  for (const o of [...menu.querySelectorAll('option')]) if (!has(o.value)) o.remove();
+  for (const g of [...menu.querySelectorAll('optgroup')]) if (!g.children.length) g.remove();
   $('voice').replaceChildren(...menu.childNodes);
-  $('voice').value = light && !PARADEE_VOICES.includes(storedVoice) ? 'af_heart' : storedVoice;
+  $('voice').value = has(storedVoice) ? storedVoice : 'af_heart';
   $('size-note').textContent = light
-    ? 'Small and fast. Works on any computer, no download.'
-    : 'Most natural voice. Downloads 310 MB once, then works offline.';
+    ? 'Small and fast, in English, Hindi, French and Spanish. Works on any computer, no download.'
+    : 'Most natural voice, in English. Downloads 310 MB once, then works offline.';
 }
 
 chrome.storage.sync.get(DEFAULTS, async (s) => {

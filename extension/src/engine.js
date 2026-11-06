@@ -6,6 +6,8 @@ import { env, PreTrainedTokenizer, RawAudio } from '@huggingface/transformers';
 import tokenizerJSON from './paradee-tokenizer.json';
 import { toMisaki } from './misaki.js';
 import { wordTimes, textWords, phonemeWords } from './wordtimes.js';
+import { phonemize } from 'phonemizer';
+import { g2p as espeakG2P, LANG_OF } from './espeak-g2p.js';
 
 env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('vendor/');
 env.allowLocalModels = false;
@@ -14,12 +16,30 @@ const MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX';
 const DTYPE = 'fp32';     // q8 on webgpu is numerically corrupt; wasm is sub-realtime
 const DEVICE = 'webgpu';
 
-// Paradee: an 8M-parameter model distilled from Kokoro, with four of its voices.
-// It ships inside the extension (8.5 MB, int8 weights) and runs on the CPU
-// (wasm), so it needs no WebGPU and no download. The model takes the voice as
-// its row in PARADEE_VOICES.
+// Paradee: an 8M-parameter model distilled from Kokoro, with eight of its voices
+// in four languages (1.3). It ships inside the extension (8.5 MB, int8 weights)
+// and runs on the CPU (wasm), so it needs no WebGPU and no download. The model
+// takes the voice as its row in PARADEE_VOICES.
 const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
-const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable'];
+const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable', 'hf_alpha', 'hm_omega', 'ff_siwis', 'em_alex'];
+
+// Hindi, French and Spanish phonemes. The phonemizer package carries eSpeak's
+// English dictionary only, so the other three (from eSpeak NG 1.52, the version
+// training used) ship in espeak/ and are written into eSpeak's files the first
+// time a voice needs one. build.mjs makes the phonemizer accept those languages
+// and hands this page eSpeak's file system as globalThis.__espeakFS.
+const dicts = {};
+function espeakDict(lang) {
+  return dicts[lang] ??= (async () => {
+    await phonemize('a', 'en-us');   // eSpeak is up, so its file system is there
+    const bytes = new Uint8Array(await (await fetch(chrome.runtime.getURL(`espeak/${lang}_dict`))).arrayBuffer());
+    globalThis.__espeakFS.writeFile(`/usr/share/espeak-ng-data/${lang}_dict`, bytes);
+  })();
+}
+async function langPhonemes(text, lang) {
+  await espeakDict(lang);
+  return espeakG2P(phonemize, text, lang);
+}
 
 let models = {}, tts = null, engine = 'kokoro', gen = 0, sentences = [], cache = new Map();
 let current = 0, stopped = false, voice = 'af_heart', speed = 1.0;
@@ -75,6 +95,17 @@ async function loadParadee() {
     return tok(ps, opts);
   });
   t.british = false;
+  // Hindi, French and Spanish voices take eSpeak's phonemes in their own language
+  // as training did (espeak-g2p.js), without kokoro-js's English text rules.
+  const englishGenerate = t.generate.bind(t);
+  t.generate = async (text, opts = {}) => {
+    const lang = LANG_OF[(opts.voice || 'af_heart')[0]];
+    if (!lang) return englishGenerate(text, opts);
+    const ps = await langPhonemes(text, lang);
+    t.phonemes = ps.replace(KEEP, '');
+    const { input_ids } = tok(ps, { truncation: true });
+    return t.generate_from_ids(input_ids, opts);
+  };
   t.generate_from_ids = async (ids, { voice: v = 'af_heart' } = {}) => {
     const out = await call({ type: 'run', ids: BigInt64Array.from(ids.data), voice: Math.max(0, PARADEE_VOICES.indexOf(v)) });
     t.durations = out.durations;
@@ -85,7 +116,11 @@ async function loadParadee() {
   let caught = '';
   const g2p = new KokoroTTS(null, (phonemes) => { caught = toMisaki(phonemes, t.british).replace(KEEP, ''); return { input_ids: null }; });
   g2p.generate_from_ids = async () => null;
-  t.g2p = async (text, v) => { await g2p.generate(text, { voice: v }); return caught; };
+  t.g2p = async (text, v) => {
+    const lang = LANG_OF[v[0]];
+    if (lang) return (await langPhonemes(text, lang)).replace(KEEP, '');
+    await g2p.generate(text, { voice: v }); return caught;
+  };
   return t;
 }
 
@@ -114,7 +149,10 @@ async function timeWords(model, text, v) {
 let runQueue = Promise.resolve();
 async function synth(i) {
   const g = gen, model = tts;
-  const v = engine === 'paradee' && !PARADEE_VOICES.includes(voice) ? 'af_heart' : voice;
+  // Kokoro here reads English only (kokoro-js has no other voices), so a Hindi,
+  // French or Spanish voice picked with Paradee reads with af_heart under Kokoro.
+  const v = engine === 'paradee' ? (PARADEE_VOICES.includes(voice) ? voice : 'af_heart')
+    : (LANG_OF[voice[0]] ? 'af_heart' : voice);
   const run = runQueue.then(() => {
     if (g !== gen) throw new Error('stale');   // the model was switched while this waited
     if (engine === 'paradee') model.british = v.startsWith('b');
