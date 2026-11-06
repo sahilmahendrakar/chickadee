@@ -1,6 +1,7 @@
 const $ = (id) => document.getElementById(id);
-// engine 'auto' means the user has not picked a model: Kokoro where WebGPU works,
-// Paradee where it does not. The engine page makes the same check.
+// engine 'auto' means the user has not picked a model, which reads with Paradee.
+// Kokoro is used only when picked, on a computer with WebGPU. The engine page
+// makes the same check.
 const DEFAULTS = { voice: 'af_heart', speed: 1, engine: 'auto' };
 
 async function hasWebGPU() {
@@ -37,7 +38,7 @@ chrome.storage.sync.get(DEFAULTS, async (s) => {
     k.disabled = true;
     k.textContent = 'Kokoro — needs WebGPU';
   }
-  $('engine').value = gpu && s.engine !== 'paradee' ? 'kokoro' : 'paradee';
+  $('engine').value = gpu && s.engine === 'kokoro' ? 'kokoro' : 'paradee';
   storedVoice = s.voice;
   $('speed').value = String(s.speed);
   showEngine();

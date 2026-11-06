@@ -213,12 +213,12 @@ async function webgpuProblem() {
 
 // Makes `which` the current model, loading it the first time. Both stay in memory
 // once loaded, so switching back and forth mid-page is instant after the first time.
-// Which model to use. Paradee when it is asked for, and also whenever WebGPU is
-// missing: Kokoro cannot run without it, so "no choice made yet" and "Kokoro chosen
-// on another computer" both fall back to Paradee instead of failing.
+// Which model to use. Paradee is the default (no choice made yet), and Kokoro only
+// when it was picked and WebGPU works: Kokoro cannot run without it, so "Kokoro
+// chosen on another computer" falls back to Paradee instead of failing.
 let gpuCheck = null;
 async function pickEngine(which) {
-  if (which === 'paradee') return 'paradee';
+  if (which !== 'kokoro') return 'paradee';
   gpuCheck ??= webgpuProblem();
   return (await gpuCheck) ? 'paradee' : 'kokoro';
 }

@@ -37,11 +37,11 @@ starts in a couple of seconds.
 ## What you need
 
 - A **Chrome-based browser** (Chrome, Edge, Arc, Brave, and friends) version 113 or newer.
+- Nothing else for the default model, [Paradee](https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.3),
+  a small model distilled from Kokoro that ships inside the extension and runs on any computer. It
+  has eight voices: two American, two British, two Hindi, one French and one Spanish.
 - For Kokoro, a computer whose browser can use the graphics card through **WebGPU**. Any Apple
-  Silicon Mac or a laptop with recent integrated graphics is comfortably enough. Without WebGPU,
-  Chickadee uses [Paradee](https://huggingface.co/sahilmahendrakar/Paradee-8M-v1.3), a small model
-  distilled from Kokoro that runs on any computer. It has eight voices: two American, two British,
-  two Hindi, one French and one Spanish.
+  Silicon Mac or a laptop with recent integrated graphics is comfortably enough.
 
 ## Why it's different
 
@@ -74,8 +74,8 @@ vectors indexed by sentence length, so delivery adapts to how long a sentence is
 sentences generate while the current one plays, so playback never waits.
 
 Kokoro runs in full precision on the GPU only. The 8-bit build produces corrupt audio on WebGPU
-and every CPU-only configuration generates slower than it plays. Without WebGPU, the extension
-uses Paradee instead, an 8M-parameter model distilled from Kokoro that runs fast on the CPU.
+and every CPU-only configuration generates slower than it plays. Paradee, the default, is an
+8M-parameter model distilled from Kokoro that runs fast on the CPU, so it needs no WebGPU.
 
 ## Developing
 
