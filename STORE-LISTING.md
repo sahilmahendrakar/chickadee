@@ -43,11 +43,11 @@ Hugging Face; it is data consumed by the bundled runtime, not executable code.
 
 ## Full description
 
-Chickadee reads any web page aloud in a natural, human-sounding voice, and it does it entirely on your own computer. Nothing you read is ever uploaded, and there is no account, no subscription and no API key.
+Chickadee reads any web page aloud in a natural, human-sounding voice, in English, Hindi, French or Spanish, and you choose who reads to you. Pick from eight built-in Paradee voices or twelve English Kokoro voices. Everything runs on your own computer. Nothing you read is ever uploaded, and there is no account, no subscription and no API key.
 
 Open an article and press Alt+R, or click the Chickadee button, and it starts reading from the top, highlighting each sentence on the page itself as it goes. Right-click any sentence and choose "Read aloud from here" to start partway through. A small floating bar lets you pause, step back and forth between sentences, and change the speed from 0.9x to 2x. Alt+P plays and pauses. Both shortcuts can be changed from the popup if you'd rather use other keys.
 
-Most read-aloud tools send your page text to a server to generate the speech. Chickadee runs the speech model directly in your browser, so the words never leave your machine. It reads with Paradee, a small model built into the extension, so it works on any computer with nothing to download. Paradee reads English, Hindi, French and Spanish, with eight voices: Heart, Puck, Isabella and Fable in English, Alpha and Omega in Hindi, Siwis in French and Alex in Spanish. On computers with WebGPU you can switch to Kokoro, the larger model Paradee was distilled from, with twelve English voices.
+Most read-aloud tools send your page text to a server to generate the speech. Chickadee runs the speech model directly in your browser, so the words never leave your machine. It reads with Paradee, a small model built into the extension, so it works on any computer with nothing to download. Paradee reads English, Hindi, French and Spanish, with eight voices: Heart, Puck, Isabella and Fable in English, Alpha and Omega in Hindi, Siwis in French and Alex in Spanish. Isabella and Fable read with British pronunciation. On computers with WebGPU you can switch to Kokoro, the larger model Paradee was distilled from, with twelve English voices.
 
 With Kokoro, Chickadee downloads the voice model once on first use (about 310 MB) and then works offline: on a plane, in a tunnel, anywhere. Paradee needs no download at all.
 
