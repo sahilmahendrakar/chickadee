@@ -11,7 +11,6 @@
   const HL_SENT = 'kokoro-sentence';
   const HL_WORD = 'kokoro-word';
   let sentences = [];      // [{ text, range, block }]
-  let onReadyCb = null;
   let frame = null, bar = null, playing = false, curIdx = -1;
 
   /* ---------- collect sentences as live-DOM ranges ---------- */
@@ -317,22 +316,44 @@
 
   // The reader is injected on demand (activeTab), so on a page it has never run on
   // the right-click that opened the menu happened before this listener existed and
-  // the point is unknown. Start at the first sentence in view instead: the click was
-  // in the viewport, so this lands within a paragraph or two of it.
-  function firstVisibleSentence() {
-    const top = scrollY + 8, bottom = scrollY + innerHeight;
-    for (let i = 0; i < boxes.length; i++)
-      for (const bx of boxes[i]) if (bx.b > top && bx.t < bottom) return i;
-    return 0;
+  // the point is unknown. Work it out from what the right-click left behind:
+  //  1. a selection: one the user made, or the word under the pointer, which a
+  //     right-click selects on a Mac;
+  //  2. the element still under the pointer (:hover), its first sentence in view;
+  //  3. otherwise the first sentence in view: the click was in the viewport, so
+  //     this lands within a paragraph or two of it.
+  const inView = (i) => boxes[i].some(bx => bx.b > scrollY + 8 && bx.t < scrollY + innerHeight);
+  function firstVisibleSentence(among = sentences.map((_, i) => i)) {
+    for (const i of among) if (inView(i)) return i;
+    return among.length ? among[0] : 0;
+  }
+  function sentenceFromPage() {
+    const sel = getSelection();
+    if (sel && sel.rangeCount && !sel.isCollapsed) {
+      const r = sel.getRangeAt(0);
+      for (let i = 0; i < sentences.length; i++)
+        try { if (sentences[i].range.isPointInRange(r.startContainer, r.startOffset)) return i; } catch (e) {}
+      for (let i = 0; i < sentences.length; i++)
+        try { if (sentences[i].range.intersectsNode(r.startContainer)) return i; } catch (e) {}
+    }
+    const hovered = [...document.querySelectorAll(':hover')].pop();
+    if (hovered && hovered !== document.body && hovered !== document.documentElement) {
+      const among = [];
+      for (let i = 0; i < sentences.length; i++)
+        try { if (sentences[i].range.intersectsNode(hovered)) among.push(i); } catch (e) {}
+      if (among.length) return firstVisibleSentence(among);
+    }
+    return firstVisibleSentence();
   }
   function resolvePoint(pt) {
     const i = pt ? sentenceAtPoint(pt.x, pt.y) : -1;
-    return i >= 0 ? i : firstVisibleSentence();
+    return i >= 0 ? i : sentenceFromPage();
   }
   function readFromPoint() {
     if (!sentences.length || !boxes.length) {      // reader not started yet
       const pending = lastPoint;
-      start(() => send({ type: 'KL_GOTO', i: resolvePoint(pending) }));
+      // Start right there, rather than at the top and then jumping.
+      start(() => resolvePoint(pending));
       return;
     }
     send({ type: 'KL_GOTO', i: resolvePoint(lastPoint) });
@@ -348,18 +369,20 @@
 
     curIdx = -1;
   }
-  function start(onReady) {
-    onReadyCb = onReady || null;
+  // startAt: optional, gives the sentence to start from once the page is collected.
+  let startIndex = 0;
+  function start(startAt) {
     sentences = collect();
     if (!sentences.length) { alert('Chickadee: no readable text found on this page.'); return; }
     cacheBoxes();
+    startIndex = startAt ? startAt() : 0;
     addEventListener('resize', cacheBoxes, { passive: true });
     ensureStyle();
     makeBar();
     if (frame) {
       chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'auto' }, (cfg) => {
         send({ type: 'KL_INIT', sentences: sentences.map(s => s.text.slice(0, 380)),
-               voice: cfg.voice, speed: cfg.speed, engine: cfg.engine });
+               voice: cfg.voice, speed: cfg.speed, engine: cfg.engine, start: startIndex });
       });
       return;
     }
@@ -380,11 +403,8 @@
       case 'KL_READY':
         chrome.storage.sync.get({ voice: 'af_heart', speed: 1, engine: 'auto' }, (cfg) => {
           send({ type: 'KL_INIT', sentences: sentences.map(s => s.text.slice(0, 380)),
-                 voice: cfg.voice, speed: cfg.speed, engine: cfg.engine });
+                 voice: cfg.voice, speed: cfg.speed, engine: cfg.engine, start: startIndex });
         });
-        break;
-      case 'KL_FIRST':
-        if (onReadyCb) { const cb = onReadyCb; onReadyCb = null; cb(); }
         break;
       case 'KL_SENTENCE':
         curIdx = d.i; paint(d.i);
