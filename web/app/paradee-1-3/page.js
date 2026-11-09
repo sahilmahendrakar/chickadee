@@ -1,4 +1,4 @@
-import { AudioClip } from '../paradee/components/AudioClip';
+import { LanguageClips } from '../paradee/components/LanguageClips';
 import { Snippet } from '../paradee/components/Figures';
 import { ReadingProgress } from '../paradee/components/ReadingProgress';
 import '../paradee/paradee.css';
@@ -25,25 +25,33 @@ const STORE = 'https://chromewebstore.google.com/detail/chickadee/nbghebngnkkjcg
 const CLIPS = [
   {
     id: 'af_heart',
-    label: 'English (Heart)',
+    language: 'English',
+    voice: 'Heart',
+    src: `${ASSETS}/audio/parakeets_af_heart.mp3`,
     lang: 'en',
     text: 'In the wild, parakeets fly in loud, colorful flocks across the open grasslands of Australia.',
   },
   {
     id: 'hf_alpha',
-    label: 'Hindi (Alpha)',
+    language: 'Hindi',
+    voice: 'Alpha',
+    src: `${ASSETS}/audio/parakeets_hf_alpha.mp3`,
     lang: 'hi',
     text: 'जंगल में तोते ऑस्ट्रेलिया के खुले घास के मैदानों के ऊपर शोर मचाते, रंग-बिरंगे झुंडों में उड़ते हैं।',
   },
   {
     id: 'ff_siwis',
-    label: 'French (Siwis)',
+    language: 'French',
+    voice: 'Siwis',
+    src: `${ASSETS}/audio/parakeets_ff_siwis.mp3`,
     lang: 'fr',
     text: 'En Australie, on peut voir les perruches voler en grandes bandes colorées au-dessus des prairies.',
   },
   {
     id: 'em_alex',
-    label: 'Spanish (Alex)',
+    language: 'Spanish',
+    voice: 'Alex',
+    src: `${ASSETS}/audio/parakeets_em_alex.mp3`,
     lang: 'es',
     text: 'En libertad, los periquitos vuelan en bandadas ruidosas y coloridas sobre las praderas abiertas de Australia.',
   },
@@ -147,12 +155,7 @@ export default function Paradee13Post() {
               it still runs about 62x faster than real time on one CPU thread.
             </p>
             <p>Here&rsquo;s a sentence about parakeets in each language.</p>
-            {CLIPS.map((c) => (
-              <div key={c.id} className="pd-lang-clip">
-                <blockquote lang={c.lang}>{c.text}</blockquote>
-                <AudioClip src={`${ASSETS}/audio/parakeets_${c.id}.mp3`} label={c.label} />
-              </div>
-            ))}
+            <LanguageClips clips={CLIPS} />
 
             <p>These are the eight voices.</p>
             <div className="pd-table-wrap">
@@ -300,8 +303,7 @@ export default function Paradee13Post() {
               Next I want to add support for more languages. Currently, Paradee can only learn a language from its
               teacher Kokoro. I want to explore if we can add more languages from Kokoro without losing quality, and
               whether it is possible to add new languages that are not supported by Kokoro. I also want to explore
-              code-switching, where one sentence mixes two languages, like Hindi with English words in it. Right now each
-              sentence is read in the language of the voice you pick.
+              code-switching, where one sentence mixes two languages, like Hindi with English words in it.
             </p>
 
             <h2>Try it</h2>
