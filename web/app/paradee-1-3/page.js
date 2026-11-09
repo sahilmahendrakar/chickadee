@@ -174,6 +174,10 @@ export default function Paradee13Post() {
               </table>
             </div>
 
+            <p>
+              Paradee 1.3 is the smallest single TTS model that speaks more than one language. It&rsquo;s about 6x
+              smaller than the next smallest, M5-TTS, which has 50M parameters.
+            </p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               className="pd-diagram"
@@ -182,10 +186,6 @@ export default function Paradee13Post() {
               height={800}
               alt="Size of single TTS models that speak more than one language: Paradee 1.3 8M, M5-TTS 50M, Supertonic 2 66M, Kokoro 82M, Supertonic 3 about 99M, Phonon about 100M, Magpie Multilingual 357M"
             />
-            <p>
-              Paradee 1.3 is the smallest single TTS model that speaks more than one language. It&rsquo;s about 6x
-              smaller than the next smallest, M5-TTS, which has 50M parameters.
-            </p>
 
             <h2>How Paradee learned to speak new languages</h2>
             <p>
