@@ -1,16 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AudioClip } from './AudioClip';
-import { stop, usePlayer } from './player';
+import { currentTime, stop, useFrame, usePlayer } from './player';
 
-
-
-/** One card with a tab per language: the chosen sentence and its clip. */
+/** One card with a tab per language: the chosen sentence, its clip, and the words lighting up as they're spoken. */
 export function LanguageClips({ clips }) {
   const [active, setActive] = useState(0);
   const player = usePlayer();
   const clip = clips[active];
+  const textRef = useRef(null);
+  const speaking = player.playing && player.src === clip.src;
+
+  useFrame(speaking, (on) => {
+    const words = textRef.current?.querySelectorAll('[data-w]');
+    if (!words) return;
+    const t = currentTime();
+    words.forEach((w, i) => {
+      const said = on && t >= clip.starts[i];
+      const next = clip.starts[i + 1] ?? Infinity;
+      w.dataset.w = !on ? 'idle' : said && t < next ? 'now' : said ? 'said' : 'ahead';
+    });
+  });
 
   function pick(i) {
     if (i === active) return;
@@ -37,8 +48,12 @@ export function LanguageClips({ clips }) {
         ))}
       </div>
       <div className="pd-langs-panel" id="pd-lang-panel" role="tabpanel" aria-labelledby={`pd-lang-tab-${clip.id}`}>
-        <p className="pd-langs-text" lang={clip.lang}>
-          {clip.text}
+        <p ref={textRef} className="pd-langs-text" lang={clip.lang} key={clip.id}>
+          {clip.text.split(' ').map((word, i) => (
+            <span key={i}>
+              <span data-w="idle">{word}</span>{' '}
+            </span>
+          ))}
         </p>
         <AudioClip src={clip.src} label={`${clip.language} (${clip.voice})`} />
       </div>
