@@ -1,10 +1,10 @@
-// A small note above the masthead, pointing to the Paradee post.
+// A small note above the masthead, pointing to the latest Paradee post.
 export default function Announce() {
   return (
-    <a className="announce" href="/paradee">
+    <a className="announce" href="/paradee-1-3">
       <span className="announce__tag">New</span>
-      <span>Introducing Paradee, a light voice that runs on any computer.</span>
-      <span className="announce__more">Read how it was made →</span>
+      <span>Paradee 1.3 now speaks Hindi, French and Spanish.</span>
+      <span className="announce__more">Read about it →</span>
     </a>
   );
 }

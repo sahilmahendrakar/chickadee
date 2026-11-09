@@ -537,3 +537,9 @@
 @media (prefers-reduced-motion: reduce) {
   .pd-layer, .pd-bar, .pd-pitch, .pd-step, .pd .pd-node, .pd-chip, .pd-spec-frame img, .pd-spec-band { transition: none !important; }
 }
+
+/* Paradee 1.3: one sentence and its clip per language */
+.pd .post-body .pd-lang-clip { margin-top: 1.4em; }
+.pd .post-body .pd-lang-clip blockquote { margin-bottom: 0.5em; }
+.pd .post-body .pd-lang-clip + p { margin-top: 1.6em; }
+.pd-table-scores td { white-space: nowrap; }

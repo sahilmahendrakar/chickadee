@@ -8,6 +8,16 @@ const source = 'https://github.com/sahilmahendrakar/chickadee';
 // Newest first.
 const posts = [
   {
+    href: '/paradee-1-3',
+    title: 'Paradee 1.3: The smallest multilingual TTS model',
+    summary:
+      'Paradee now speaks Hindi, French and Spanish along with English, without growing in size or losing quality on existing voices.',
+    date: '2026-11-09',
+    label: 'November 9, 2026',
+
+    cover: '/paradee-1-3/img/cover-paper.webp',
+  },
+  {
     href: '/paradee-1-2',
     title: 'Paradee 1.2: Expanding to additional voices',
     summary: 'Paradee now speaks four voices without growing in size or losing quality.',
@@ -69,7 +79,7 @@ export default function Blog() {
                   <h2>{post.title}</h2>
                   <p>{post.summary}</p>
                 </div>
-                <img className="writing-cover" src={post.cover} alt="" loading="lazy" />
+                {post.cover && <img className="writing-cover" src={post.cover} alt="" loading="lazy" />}
               </a>
             </li>
           ))}
