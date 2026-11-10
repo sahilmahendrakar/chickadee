@@ -6,8 +6,7 @@ import { env, PreTrainedTokenizer, RawAudio } from '@huggingface/transformers';
 import tokenizerJSON from './paradee-tokenizer.json';
 import { toMisaki } from './misaki.js';
 import { wordTimes, textWords, phonemeWords } from './wordtimes.js';
-import { phonemize } from 'phonemizer';
-import { g2p as espeakG2P, LANG_OF } from './espeak-g2p.js';
+import { LANG_OF } from './paradee-g2p.js';
 
 env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('vendor/');
 env.allowLocalModels = false;
@@ -23,23 +22,9 @@ const DEVICE = 'webgpu';
 const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
 const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable', 'hf_alpha', 'hm_omega', 'ff_siwis', 'em_alex'];
 
-// Hindi, French and Spanish phonemes. The phonemizer package carries eSpeak's
-// English dictionary only, so the other three (from eSpeak NG 1.52, the version
-// training used) ship in espeak/ and are written into eSpeak's files the first
-// time a voice needs one. build.mjs makes the phonemizer accept those languages
-// and hands this page eSpeak's file system as globalThis.__espeakFS.
-const dicts = {};
-function espeakDict(lang) {
-  return dicts[lang] ??= (async () => {
-    await phonemize('a', 'en-us');   // eSpeak is up, so its file system is there
-    const bytes = new Uint8Array(await (await fetch(chrome.runtime.getURL(`espeak/${lang}_dict`))).arrayBuffer());
-    globalThis.__espeakFS.writeFile(`/usr/share/espeak-ng-data/${lang}_dict`, bytes);
-  })();
-}
-async function langPhonemes(text, lang) {
-  await espeakDict(lang);
-  return espeakG2P(phonemize, text, lang);
-}
+// Hindi, French and Spanish phonemes come from Paradee's own G2P (paradee-g2p.js,
+// files in g2p/), which runs in the Paradee worker next to the model.
+const G2P_URL = chrome.runtime.getURL('g2p/');
 
 let models = {}, tts = null, engine = 'kokoro', gen = 0, sentences = [], cache = new Map();
 let current = 0, stopped = false, voice = 'af_heart', speed = 1.0;
@@ -88,6 +73,7 @@ function paradeeWorker() {
 async function loadParadee() {
   const call = paradeeWorker();
   await call({ type: 'load', url: PARADEE_URL, wasmPaths: chrome.runtime.getURL('vendor/') });
+  const langPhonemes = async (text, lang) => (await call({ type: 'phonemize', text, lang, g2pUrl: G2P_URL })).phonemes;
   const tok = new PreTrainedTokenizer(tokenizerJSON, { model_max_length: 512, pad_token: '$', unk_token: '$' });
   const t = new KokoroTTS(null, (phonemes, opts) => {
     const ps = toMisaki(phonemes, t.british);
@@ -95,8 +81,8 @@ async function loadParadee() {
     return tok(ps, opts);
   });
   t.british = false;
-  // Hindi, French and Spanish voices take eSpeak's phonemes in their own language
-  // as training did (espeak-g2p.js), without kokoro-js's English text rules.
+  // Hindi, French and Spanish voices take phonemes in eSpeak's style in their own
+  // language, as training did (paradee-g2p.js), without kokoro-js's English text rules.
   const englishGenerate = t.generate.bind(t);
   t.generate = async (text, opts = {}) => {
     const lang = LANG_OF[(opts.voice || 'af_heart')[0]];

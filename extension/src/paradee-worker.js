@@ -1,10 +1,13 @@
 // Runs the Paradee model off the engine page's main thread. On the CPU (wasm) a
 // sentence takes a moment to make, and the next ones are made while one plays;
 // on the main thread that froze the word highlight until each one was done.
+// It also turns Hindi, French and Spanish text into phonemes (paradee-g2p.js),
+// with a small model of its own that is loaded the first time it is needed.
 import * as ort from 'onnxruntime-web';
 import { DURATIONS, withOutput } from './wordtimes.js';
+import { ParadeeG2P } from './paradee-g2p.js';
 
-let session = null;
+let session = null, g2p = null;
 self.onmessage = async ({ data: d }) => {
   try {
     if (d.type === 'load') {
@@ -20,6 +23,15 @@ self.onmessage = async ({ data: d }) => {
       });
       const waveform = out.waveform.data, durations = Float32Array.from(out[DURATIONS].data);
       self.postMessage({ id: d.id, waveform, durations }, [waveform.buffer, durations.buffer]);
+    } else if (d.type === 'phonemize') {
+      g2p ??= (async () => {
+        const [model, data] = await Promise.all([
+          fetch(d.g2pUrl + 'g2p.onnx').then((r) => r.arrayBuffer()),
+          fetch(d.g2pUrl + 'g2p.json').then((r) => r.json()),
+        ]);
+        return ParadeeG2P.create(ort, new Uint8Array(model), data);
+      })();
+      self.postMessage({ id: d.id, phonemes: await (await g2p).phonemize(d.text, d.lang) });
     }
   } catch (e) {
     self.postMessage({ id: d.id, error: String(e && e.message || e) });
