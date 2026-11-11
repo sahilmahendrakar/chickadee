@@ -50,6 +50,17 @@ const stubNodeBuiltins = {
   }
 };
 
+// kokoro-js imports the phonemizer package (eSpeak NG compiled to WebAssembly,
+// GPL-3.0) for its own text -> phonemes step. The engine makes the phonemes itself
+// (misaki-en.js, paradee-g2p.js) and never calls that step, so eSpeak is left out
+// of the bundle: the import resolves to a stub that throws if it is ever reached.
+const noEspeak = {
+  name: 'no-espeak',
+  setup(build) {
+    build.onResolve({ filter: /^phonemizer$/ }, () => ({ path: path.resolve('src/stubs/phonemizer.js') }));
+  }
+};
+
 await esbuild.build({
   entryPoints: ['src/engine.js'],
   bundle: true,
@@ -58,7 +69,7 @@ await esbuild.build({
   target: 'chrome120',
   minify: true,
   outfile: 'ext/engine.bundle.js',
-  plugins: [stubNodeBuiltins],
+  plugins: [stubNodeBuiltins, noEspeak],
   logLevel: 'warning',
   legalComments: 'none'
 });
