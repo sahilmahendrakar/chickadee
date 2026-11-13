@@ -50,23 +50,14 @@ const stubNodeBuiltins = {
   }
 };
 
-// The phonemizer package's eSpeak carries only the English dictionary and accepts
-// only English voices. Paradee's Hindi, French and Spanish voices need eSpeak in
-// those languages, so let it accept them, and hand the engine eSpeak's file
-// system so it can add their dictionaries (ext/espeak/, from eSpeak NG 1.52).
-const PHONEMIZER_LANGS = {
-  name: 'phonemizer-langs',
+// kokoro-js imports the phonemizer package (eSpeak NG compiled to WebAssembly,
+// GPL-3.0) for its own text -> phonemes step. The engine makes the phonemes itself
+// (misaki-en.js, paradee-g2p.js) and never calls that step, so eSpeak is left out
+// of the bundle: the import resolves to a stub that throws if it is ever reached.
+const noEspeak = {
+  name: 'no-espeak',
   setup(build) {
-    build.onLoad({ filter: /phonemizer[\/]dist[\/]phonemizer\.js$/ }, (args) => {
-      let js = fs.readFileSync(args.path, 'utf8');
-      const swap = (from, to) => {
-        if (!js.includes(from)) throw new Error(`phonemizer patch: "${from}" not found (package changed?)`);
-        js = js.split(from).join(to);
-      };
-      swap('ke=["en"]', 'ke=["en","hi","fr","es"]');
-      swap('A.FS_createDataFile=U.createDataFile,', 'A.FS_createDataFile=U.createDataFile,globalThis.__espeakFS=U,');
-      return { contents: js, loader: 'js' };
-    });
+    build.onResolve({ filter: /^phonemizer$/ }, () => ({ path: path.resolve('src/stubs/phonemizer.js') }));
   }
 };
 
@@ -78,7 +69,7 @@ await esbuild.build({
   target: 'chrome120',
   minify: true,
   outfile: 'ext/engine.bundle.js',
-  plugins: [stubNodeBuiltins, PHONEMIZER_LANGS],
+  plugins: [stubNodeBuiltins, noEspeak],
   logLevel: 'warning',
   legalComments: 'none'
 });

@@ -4,10 +4,8 @@
 import { KokoroTTS } from 'kokoro-js';
 import { env, PreTrainedTokenizer, RawAudio } from '@huggingface/transformers';
 import tokenizerJSON from './paradee-tokenizer.json';
-import { toMisaki } from './misaki.js';
 import { wordTimes, textWords, phonemeWords } from './wordtimes.js';
-import { phonemize } from 'phonemizer';
-import { g2p as espeakG2P, LANG_OF } from './espeak-g2p.js';
+import { LANG_OF } from './paradee-g2p.js';
 
 env.backends.onnx.wasm.wasmPaths = chrome.runtime.getURL('vendor/');
 env.allowLocalModels = false;
@@ -23,23 +21,8 @@ const DEVICE = 'webgpu';
 const PARADEE_URL = chrome.runtime.getURL('paradee/paradee.onnx');
 const PARADEE_VOICES = ['af_heart', 'bf_isabella', 'am_puck', 'bm_fable', 'hf_alpha', 'hm_omega', 'ff_siwis', 'em_alex'];
 
-// Hindi, French and Spanish phonemes. The phonemizer package carries eSpeak's
-// English dictionary only, so the other three (from eSpeak NG 1.52, the version
-// training used) ship in espeak/ and are written into eSpeak's files the first
-// time a voice needs one. build.mjs makes the phonemizer accept those languages
-// and hands this page eSpeak's file system as globalThis.__espeakFS.
-const dicts = {};
-function espeakDict(lang) {
-  return dicts[lang] ??= (async () => {
-    await phonemize('a', 'en-us');   // eSpeak is up, so its file system is there
-    const bytes = new Uint8Array(await (await fetch(chrome.runtime.getURL(`espeak/${lang}_dict`))).arrayBuffer());
-    globalThis.__espeakFS.writeFile(`/usr/share/espeak-ng-data/${lang}_dict`, bytes);
-  })();
-}
-async function langPhonemes(text, lang) {
-  await espeakDict(lang);
-  return espeakG2P(phonemize, text, lang);
-}
+// The phonemizers' files: g2p/ (Paradee's own G2P) and misaki/ (misaki's English dictionaries).
+const DATA_URL = chrome.runtime.getURL('');
 
 let models = {}, tts = null, engine = 'kokoro', gen = 0, sentences = [], cache = new Map();
 let current = 0, stopped = false, voice = 'af_heart', speed = 1.0;
@@ -60,16 +43,16 @@ function tick() {
   emit(k < 0 ? { type: 'KL_WORD', i: playing.i, from: -1 } : { type: 'KL_WORD', i: playing.i, from: ws[k].from, to: ws[k].to });
 }
 
-// Reuses kokoro-js for text -> phonemes -> token ids and swaps in Paradee for
-// the model call. kokoro-js picks British eSpeak for a bf_/bm_ voice and American
-// for the rest; t.british tells toMisaki which of the two it got. It is set just
-// before each generate, and runs never overlap (see runQueue).
+// Text -> phonemes, for both models and every language, without eSpeak. It runs in
+// the Paradee worker (paradee-worker.js): English through misaki's rules and
+// dictionaries (misaki-en.js), which Kokoro and Paradee both learned English from,
+// and Hindi, French and Spanish through Paradee's own G2P (paradee-g2p.js), which
+// also reads the English words misaki's dictionaries don't have.
 //
 // The model also says how long each phoneme lasts (see wordtimes.js), which is
 // how the reader knows the word being spoken. t.phonemes and t.durations hold
 // the last run's phonemes, one per token id, and their frames.
 const KEEP = new RegExp(tokenizerJSON.normalizer.pattern.Regex, 'gu');   // what the tokenizer drops
-// The model itself runs in a worker (paradee-worker.js).
 function paradeeWorker() {
   const w = new Worker(chrome.runtime.getURL('paradee-worker.bundle.js'));
   const waiting = new Map();
@@ -85,42 +68,29 @@ function paradeeWorker() {
     w.postMessage({ ...msg, id });
   });
 }
+let worker = null;
+const call = (msg) => (worker ??= paradeeWorker())({ ...msg, wasmPaths: chrome.runtime.getURL('vendor/') });
+// A voice's language, from the first letter of its name: a = American English,
+// b = British English, h = Hindi, f = French, e = Spanish.
+const langOf = (v) => LANG_OF[v[0]] || (v[0] === 'b' ? 'en-gb' : 'en-us');
+async function phonemes(text, v) {
+  return (await call({ type: 'phonemize', text, lang: langOf(v), dataUrl: DATA_URL })).phonemes;
+}
+
 async function loadParadee() {
-  const call = paradeeWorker();
-  await call({ type: 'load', url: PARADEE_URL, wasmPaths: chrome.runtime.getURL('vendor/') });
+  await call({ type: 'load', url: PARADEE_URL });
   const tok = new PreTrainedTokenizer(tokenizerJSON, { model_max_length: 512, pad_token: '$', unk_token: '$' });
-  const t = new KokoroTTS(null, (phonemes, opts) => {
-    const ps = toMisaki(phonemes, t.british);
-    t.phonemes = ps.replace(KEEP, '');
-    return tok(ps, opts);
-  });
-  t.british = false;
-  // Hindi, French and Spanish voices take eSpeak's phonemes in their own language
-  // as training did (espeak-g2p.js), without kokoro-js's English text rules.
-  const englishGenerate = t.generate.bind(t);
-  t.generate = async (text, opts = {}) => {
-    const lang = LANG_OF[(opts.voice || 'af_heart')[0]];
-    if (!lang) return englishGenerate(text, opts);
-    const ps = await langPhonemes(text, lang);
+  const t = { phonemes: '', durations: null };
+  t.generate = async (text, { voice: v = 'af_heart' } = {}) => {
+    const ps = await phonemes(text, v);
     t.phonemes = ps.replace(KEEP, '');
     const { input_ids } = tok(ps, { truncation: true });
-    return t.generate_from_ids(input_ids, opts);
-  };
-  t.generate_from_ids = async (ids, { voice: v = 'af_heart' } = {}) => {
-    const out = await call({ type: 'run', ids: BigInt64Array.from(ids.data), voice: Math.max(0, PARADEE_VOICES.indexOf(v)) });
+    const out = await call({ type: 'run', ids: BigInt64Array.from(input_ids.data), voice: Math.max(0, PARADEE_VOICES.indexOf(v)) });
     t.durations = out.durations;
     t.phonemes = t.phonemes.slice(0, Math.max(0, t.durations.length - 2));   // the tokenizer cuts at 512 ids
     return new RawAudio(out.waveform, 24000);
   };
-  // The phonemes kokoro-js would make for a piece of text, without running the model.
-  let caught = '';
-  const g2p = new KokoroTTS(null, (phonemes) => { caught = toMisaki(phonemes, t.british).replace(KEEP, ''); return { input_ids: null }; });
-  g2p.generate_from_ids = async () => null;
-  t.g2p = async (text, v) => {
-    const lang = LANG_OF[v[0]];
-    if (lang) return (await langPhonemes(text, lang)).replace(KEEP, '');
-    await g2p.generate(text, { voice: v }); return caught;
-  };
+  t.g2p = async (text, v) => (await phonemes(text, v)).replace(KEEP, '');
   return t;
 }
 
@@ -155,7 +125,6 @@ async function synth(i) {
     : (LANG_OF[voice[0]] ? 'af_heart' : voice);
   const run = runQueue.then(() => {
     if (g !== gen) throw new Error('stale');   // the model was switched while this waited
-    if (engine === 'paradee') model.british = v.startsWith('b');
     // Raw model output, untouched. Trimming/normalising the leading and trailing
     // silence was tried and reverted: it made sentence starts and ends sound wrong.
     return model.generate(sentences[i], { voice: v, speed: 1.0 }).then(async (raw) =>
@@ -223,6 +192,15 @@ async function pickEngine(which) {
   return (await gpuCheck) ? 'paradee' : 'kokoro';
 }
 
+// kokoro-js reads text with eSpeak; Kokoro learned misaki's phonemes, so give it those.
+function withPhonemes(k) {
+  k.generate = async (text, { voice: v = 'af_heart', speed: sp = 1 } = {}) => {
+    const { input_ids } = k.tokenizer(await phonemes(text, v), { truncation: true });
+    return k.generate_from_ids(input_ids, { voice: v, speed: sp });
+  };
+  return k;
+}
+
 async function loadModel(which) {
   const want = await pickEngine(which);
   if (want !== engine) { engine = want; tts = null; gen++; cache.clear(); }
@@ -247,13 +225,13 @@ async function loadModel(which) {
     } catch (e) { /* no Cache API: treat as a first run */ }
     if (!cached) emit({ type: 'KL_STATUS', text: 'First run: downloading voice (~310 MB, one time)…', busy: true });
     try {
-      tts = models.kokoro = await KokoroTTS.from_pretrained(MODEL, {
+      tts = models.kokoro = withPhonemes(await KokoroTTS.from_pretrained(MODEL, {
         dtype: DTYPE, device: DEVICE,
         progress_callback: (p) => {
           if (!cached && p.status === 'progress' && p.progress != null)
             emit({ type: 'KL_STATUS', text: `Downloading model ${Math.round(p.progress)}%`, busy: true });
         }
-      });
+      }));
     } catch (e) { emit({ type: 'KL_STATUS', text: 'Model failed: ' + (e.message || e) }); return false; }
   }
   return true;
