@@ -68,7 +68,7 @@ Three small pieces, and the model:
 | `extension/ext/engine.html` | A hidden frame that holds the model and the `<audio>` element |
 | `extension/ext/background.js` | Routes the toolbar button, keyboard shortcuts, and right-click menu to the page you're on |
 
-For each sentence: **text → phonemes** (espeak-ng compiled to WebAssembly) **→ tokens →
+For each sentence: **text → phonemes** (misaki's rules and dictionaries for English, Paradee's own small G2P model for Hindi, French and Spanish) **→ tokens →
 Kokoro-82M** (ONNX Runtime on WebGPU) **→ 24 kHz audio**. A "voice" is a table of 510 style
 vectors indexed by sentence length, so delivery adapts to how long a sentence is. The next two
 sentences generate while the current one plays, so playback never waits.
@@ -111,7 +111,7 @@ and at [usechickadee.com/privacy](https://www.usechickadee.com/privacy).
 [kokoro-js](https://github.com/hexgrad/kokoro) (Apache-2.0) ·
 [Transformers.js](https://github.com/huggingface/transformers.js) (Apache-2.0) ·
 [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) (MIT) ·
-[espeak-ng](https://github.com/espeak-ng/espeak-ng) (GPL-3.0, via the `phonemizer` package)
+[misaki](https://github.com/hexgrad/misaki) (Apache-2.0)
 
 ## License
 

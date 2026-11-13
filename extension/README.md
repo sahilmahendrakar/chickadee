@@ -18,12 +18,22 @@ Load unpacked from `ext/` at `chrome://extensions` (Developer mode).
   and the engine tells the page which word is being spoken. The model runs in a worker
   (`src/paradee-worker.js`) so making the next sentence never freezes the highlight.
   Kokoro (via kokoro-js) gives no durations, so with Kokoro only the sentence is lit.
-- **Hindi, French and Spanish (Paradee only)** — Paradee 1.3 was trained on eSpeak's
-  phonemes in each voice's own language. eSpeak is GPL-3.0, so these come from Paradee's
-  own G2P instead (`src/paradee-g2p.js`, the same as `paradee/g2p.py` in the Python
-  package): a 0.9 MB model plus word lists and a number table in `ext/g2p/`, learned from
-  eSpeak's output. It runs in the Paradee worker. On held-out sentences it differs from
-  eSpeak in 0.80% (Hindi), 0.95% (French) and 0.59% (Spanish) of phoneme characters.
+- **Text → phonemes, without eSpeak** — Kokoro and Paradee learned English from misaki
+  (Kokoro's own G2P) and Hindi, French and Spanish from eSpeak NG. eSpeak is GPL-3.0, so
+  neither ships here. Both run in the Paradee worker and load the first time they're needed.
+  - **English** (`src/misaki-en.js`): misaki's own code ported to JS, with its American and
+    British dictionaries in `ext/misaki/`. misaki tags words with spaCy; here a few rules
+    split and tag the text, and a small classifier learned from spaCy's tags
+    (`ext/g2p/en-tags.json`) picks the tag of the ~800 words whose sound depends on it
+    ("read", "live"). Words the dictionaries don't have go to Paradee's G2P. On 1,000
+    Wikipedia sentences it differs from misaki with spaCy in 0.18% of phoneme characters.
+    The eSpeak path it replaces (kokoro-js) differed in 8.5%.
+  - **Hindi, French and Spanish** (`src/paradee-g2p.js`, the same as `paradee/g2p.py` in
+    the Python package): a 0.9 MB model plus word lists and a number table in `ext/g2p/`,
+    learned from eSpeak's output. On held-out sentences it differs from eSpeak in 0.80%
+    (Hindi), 0.95% (French) and 0.59% (Spanish) of phoneme characters.
+  - kokoro-js imports the `phonemizer` package (eSpeak); build.mjs points that import at a
+    stub, so eSpeak isn't in the bundle.
 - **`ext/background.js`** — routes the Alt+R / Alt+P commands and the toolbar click.
 - Sentence N+1 and N+2 generate while N plays (prefetch), so playback never waits.
 
